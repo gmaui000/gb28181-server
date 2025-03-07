@@ -1,0 +1,52 @@
+version: '3'
+services:
+  gbserver_mysql:
+    image: mysql:8
+    privileged: true
+    container_name: gbserver_mysql
+    environment:
+      TZ: "Asia/Shanghai"
+      MYSQL_ROOT_PASSWORD: admin@123
+      MYSQL_USER: admin_user
+      MYSQL_PASSWORD: admin@123
+    ports:
+      - 33061:3306
+    volumes:
+      - ./mysql/data/:/var/lib/mysql/
+      - ./mysql/conf/:/etc/mysql/conf.d/
+      - ./mysql/init-sql:/docker-entrypoint-initdb.d/
+    restart: always
+    networks:
+      gbserver:
+        ipv4_address: 10.20.0.10
+
+  gbserver_adminer:
+    image: adminer
+    restart: always
+    depends_on: 
+      - gbserver_mysql
+    ports:
+      - 8080:8080
+    networks:
+      gbserver:
+        ipv4_address: 10.20.0.11
+
+  gbserver_redis:
+    image: redis:5
+    container_name: gbserver_redis
+    volumes:
+      - ./redis/data/:/data/
+    restart: always
+    networks:
+      gbserver:
+        ipv4_address: 10.20.0.12
+
+networks:
+  gbserver:
+    external: false
+    name: gbserver_network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.20.0.0/16
+          gateway: 10.20.0.1

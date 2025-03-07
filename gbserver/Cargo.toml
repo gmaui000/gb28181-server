@@ -1,0 +1,26 @@
+[package]
+name = "gbserver"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rsip = "0.4"
+sqlx = { version = "0.8" }
+uuid = { version = "1.15", features = ["v4"] }
+quick-xml = { version = "0.37", features = ["encoding_rs", "encoding"] }
+encoding_rs = "0.8"
+poem = "3.1"
+poem-openapi = { version = "5.1", features = ["swagger-ui"] }
+reqwest = { version = "0.12", features = ["json"] }
+sdp-types = "0.1"
+regex = "1.11"
+image = "0.25"
+rayon = "1.10"
+crossbeam-channel = "0.5"
+parking_lot = "0.12"
+anyhow = "1.0"
+common = { package = "dbhelper", path = "../helper/dbhelper", features = [
+    "net",
+] }

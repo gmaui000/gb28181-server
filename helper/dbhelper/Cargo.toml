@@ -1,0 +1,18 @@
+[package]
+name = "dbhelper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+sqlx = { version = "0.8", features = [
+    "mysql",
+    "runtime-tokio-native-tls",
+    "default",
+    "chrono",
+] }
+tokio = { version = "1", features = ["full"] }
+
+[features]
+default = []
+net = ["common/net"]

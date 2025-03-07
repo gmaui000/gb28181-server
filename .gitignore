@@ -1,0 +1,7 @@
+**/target
+!/mysql/init-sql/
+/mysql/
+/redis/
+.vscode/
+Cargo.lock
+logs/

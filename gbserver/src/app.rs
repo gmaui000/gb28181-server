@@ -16,8 +16,19 @@ pub struct AppInfo {
     http: Http,
 }
 
-impl Daemon<(std::net::TcpListener, (Option<std::net::TcpListener>, Option<UdpSocket>))> for AppInfo {
-    fn init_privilege() -> GlobalResult<(Self, (std::net::TcpListener, (Option<std::net::TcpListener>, Option<UdpSocket>)))>
+impl
+    Daemon<(
+        std::net::TcpListener,
+        (Option<std::net::TcpListener>, Option<UdpSocket>),
+    )> for AppInfo
+{
+    fn init_privilege() -> GlobalResult<(
+        Self,
+        (
+            std::net::TcpListener,
+            (Option<std::net::TcpListener>, Option<UdpSocket>),
+        ),
+    )>
     where
         Self: Sized,
     {
@@ -32,7 +43,13 @@ impl Daemon<(std::net::TcpListener, (Option<std::net::TcpListener>, Option<UdpSo
         Ok((app_info, (http_listener, tu)))
     }
 
-    fn run_app(self, t: (std::net::TcpListener, (Option<std::net::TcpListener>, Option<UdpSocket>))) -> GlobalResult<()> {
+    fn run_app(
+        self,
+        t: (
+            std::net::TcpListener,
+            (Option<std::net::TcpListener>, Option<UdpSocket>),
+        ),
+    ) -> GlobalResult<()> {
         let http = self.http;
         let (http_listener, tu) = t;
         tokio::runtime::Builder::new_multi_thread()
@@ -64,12 +81,11 @@ impl Daemon<(std::net::TcpListener, (Option<std::net::TcpListener>, Option<UdpSo
 
 fn banner() {
     let br = r#"
-            ___   __  __  __   __    _      ___     ___     ___     ___     ___     ___    _  _
-    o O O  / __| |  \/  | \ \ / /   (_)    / __|   | __|   / __|   / __|   |_ _|   / _ \  | \| |
-   o      | (_ | | |\/| |  \ V /     _     \__ \   | _|    \__ \   \__ \    | |   | (_) | | .` |
-  o0__[O]  \___| |_|__|_|  _\_/_   _(_)_   |___/   |___|   |___/   |___/   |___|   \___/  |_|\_|
- {======|_|""G""|_|""M""|_|""V""|_|"":""|_|""S""|_|""E""|_|""S""|_|""S""|_|""I""|_|""O""|_|""N""|
-./0--000'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-'
+              ____  ____  ____   ___   _   ___   _        ____   _____  ____ __     __ _____  ____  
+             / ___|| __ )|___ \ ( _ ) / | ( _ ) / |      / ___| | ____||  _ \\ \   / /| ____||  _ \ 
+    o O O   | |  _ |  _ \  __) |/ _ \ | | / _ \ | | _____\___ \ |  _|  | |_) |\ \ / / |  _|  | |_) |
+   o        | |_| || |_) |/ __/| (_) || || (_) || ||_____|___) || |___ |  _ <  \ V /  | |___ |  _ < 
+  o0__[O]    \____||____/|_____|\___/ |_| \___/ |_|      |____/ |_____||_| \_\  \_/   |_____||_| \_\
 "#;
     info!("{}", br);
 }

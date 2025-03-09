@@ -430,7 +430,7 @@ mod tests {
     }
 
     fn init() {
-        init_cfg("gbs/session/config.yml".to_string());
+        init_cfg("config.yml".to_string());
         let _ = mysqlx::init_conn_pool();
     }
 }

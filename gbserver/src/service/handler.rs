@@ -11,7 +11,9 @@ use crate::gb::handler::cmd::CmdStream;
 use crate::gb::RWSession;
 use crate::general;
 use crate::general::cache::PlayType;
-use crate::general::model::{PlayBackModel, PlayLiveModel, StreamInfo, StreamMode};
+use crate::general::model::{
+    PlayBackModel, PlayLiveModel, PlaySeekModel, PlaySpeedModel, StreamInfo, StreamMode,
+};
 use crate::service::{
     callback, BaseStreamInfo, StreamPlayInfo, StreamState, EXPIRES, RELOAD_EXPIRES,
 };
@@ -142,6 +144,46 @@ pub async fn play_back(play_back_model: PlayBackModel, token: String) -> GlobalR
         start_invite_stream(device_id, channel_id, &token, play_type, *st, *et).await?;
     general::cache::Cache::stream_map_insert_token(stream_id.clone(), token);
     Ok(StreamInfo::build(stream_id, node_name))
+}
+
+pub async fn seek(seek_mode: PlaySeekModel, _token: String) -> GlobalResult<bool> {
+    let (device_id, channel_id, _ssrc) = id_builder::de_stream_id(seek_mode.get_stream_id());
+    let (call_id, seq, from_tag, to_tag) =
+        general::cache::Cache::stream_map_build_call_id_seq_from_to_tag(seek_mode.get_stream_id())
+            .ok_or_else(|| {
+                GlobalError::new_biz_error(1100, "流不存在", |msg| error!("{msg}"))
+            })?;
+    CmdStream::play_seek(
+        &device_id,
+        &channel_id,
+        *seek_mode.get_seek_second(),
+        &from_tag,
+        &to_tag,
+        seq,
+        call_id,
+    )
+    .await?;
+    Ok(true)
+}
+
+pub async fn speed(speed_mode: PlaySpeedModel, _token: String) -> GlobalResult<bool> {
+    let (device_id, channel_id, _ssrc) = id_builder::de_stream_id(speed_mode.get_stream_id());
+    let (call_id, seq, from_tag, to_tag) =
+        general::cache::Cache::stream_map_build_call_id_seq_from_to_tag(speed_mode.get_stream_id())
+            .ok_or_else(|| {
+                GlobalError::new_biz_error(1100, "流不存在", |msg| error!("{msg}"))
+            })?;
+    CmdStream::play_speed(
+        &device_id,
+        &channel_id,
+        *speed_mode.get_speed_rate(),
+        &from_tag,
+        &to_tag,
+        seq,
+        call_id,
+    )
+    .await?;
+    Ok(true)
 }
 
 //选择流媒体节点（可用+负载最小）-> 监听流注册

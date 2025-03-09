@@ -1,6 +1,6 @@
 log:
   level: info
-  prefix: session
+  prefix: gbserver
   store_path: ./logs
   specify:
     - crate_name: poem::server
@@ -24,7 +24,7 @@ log:
 http:
   port: 18567
   timeout: 30   #请求超时 单位秒
-  prefix: /session
+  prefix: /gbserver
   server_name: gbserver
   version: v0.2
 
@@ -53,7 +53,7 @@ db:
       check_health: true    # 默认true，连接池维持健康测试
 
 server:
-  session:
+  gbserver:
     lan_ip: 192.168.31.164  # 不能写成0.0.0.0或者127.0.0.1,必须是网卡上的地址
     wan_ip: 192.168.31.164  # 公网IP
     lan_port: 5060  #lan端口

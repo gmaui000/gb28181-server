@@ -1,11 +1,11 @@
-use poem_openapi::{self, Object};
-use poem_openapi::types::{ParseFromJSON, ToJSON, Type};
 use common::serde::{Deserialize, Serialize};
+use poem_openapi::types::{ParseFromJSON, ToJSON, Type};
+use poem_openapi::{self, Object};
 
 use common::anyhow::anyhow;
+use common::constructor::Get;
 use common::exception::GlobalError::SysErr;
 use common::exception::GlobalResult;
-use common::constructor::Get;
 
 use crate::general;
 
@@ -18,10 +18,10 @@ pub enum StreamMode {
 impl StreamMode {
     pub fn build(m: u8) -> GlobalResult<Self> {
         match m {
-            0 => { Ok(StreamMode::Udp) }
-            1 => { Ok(StreamMode::TcpActive) }
-            2 => { Ok(StreamMode::TcpPassive) }
-            _ => { Err(SysErr(anyhow!("无效流模式"))) }
+            0 => Ok(StreamMode::Udp),
+            1 => Ok(StreamMode::TcpActive),
+            2 => Ok(StreamMode::TcpPassive),
+            _ => Err(SysErr(anyhow!("无效流模式"))),
         }
     }
 }
@@ -36,23 +36,42 @@ pub struct ResultMessageData<T: Type + ParseFromJSON + ToJSON> {
 impl<T: Type + ParseFromJSON + ToJSON> ResultMessageData<T> {
     #[allow(dead_code)]
     pub fn build(code: u16, msg: String, data: T) -> Self {
-        Self { code, msg: Some(msg), data: Some(data) }
+        Self {
+            code,
+            msg: Some(msg),
+            data: Some(data),
+        }
     }
 
     pub fn build_success(data: T) -> Self {
-        Self { code: 200, msg: Some("success".to_string()), data: Some(data) }
+        Self {
+            code: 200,
+            msg: Some("success".to_string()),
+            data: Some(data),
+        }
     }
     pub fn build_success_none() -> Self {
-        Self { code: 200, msg: Some("success".to_string()), data: None }
+        Self {
+            code: 200,
+            msg: Some("success".to_string()),
+            data: None,
+        }
     }
     pub fn build_failure() -> Self {
-        Self { code: 500, msg: Some("failure".to_string()), data: None }
+        Self {
+            code: 500,
+            msg: Some("failure".to_string()),
+            data: None,
+        }
     }
     pub fn build_failure_msg(msg: String) -> Self {
-        Self { code: 500, msg: Some(msg), data: None }
+        Self {
+            code: 500,
+            msg: Some(msg),
+            data: None,
+        }
     }
 }
-
 
 #[derive(Debug, Deserialize, Object, Serialize, Get)]
 #[serde(crate = "common::serde")]
@@ -81,6 +100,25 @@ pub struct PlayBackModel {
     et: u32,
 }
 
+#[derive(Debug, Deserialize, Object, Serialize, Get)]
+#[serde(crate = "common::serde")]
+#[allow(non_snake_case)]
+pub struct PlaySeekModel {
+    #[oai(validator(min_length = "24", max_length = "32"))]
+    stream_id: String,
+    #[oai(validator(maximum(value = "86400"), minimum(value = "1")))]
+    seek_second: u32,
+}
+
+#[derive(Debug, Deserialize, Object, Serialize, Get)]
+#[serde(crate = "common::serde")]
+#[allow(non_snake_case)]
+pub struct PlaySpeedModel {
+    #[oai(validator(min_length = "24", max_length = "32"))]
+    stream_id: String,
+    #[oai(validator(maximum(value = "8"), minimum(value = "0.25")))]
+    speed_rate: f32,
+}
 
 #[derive(Debug, Deserialize, Object, Serialize)]
 #[serde(crate = "common::serde")]
@@ -98,18 +136,24 @@ impl StreamInfo {
             None => {
                 let node_stream = stream_conf.get_node_map().get(&node_name).unwrap();
                 Self {
-                    flv: format!("http://{}:{}/{node_name}/play/{stream_id}.flv", node_stream.get_pub_ip(), node_stream.get_local_port()),
-                    m3u8: format!("http://{}:{}/{node_name}/play/{stream_id}.m3u8", node_stream.get_pub_ip(), node_stream.get_local_port()),
+                    flv: format!(
+                        "http://{}:{}/{node_name}/play/{stream_id}.flv",
+                        node_stream.get_pub_ip(),
+                        node_stream.get_local_port()
+                    ),
+                    m3u8: format!(
+                        "http://{}:{}/{node_name}/play/{stream_id}.m3u8",
+                        node_stream.get_pub_ip(),
+                        node_stream.get_local_port()
+                    ),
                     streamId: stream_id,
                 }
             }
-            Some(addr) => {
-                Self {
-                    flv: format!("{addr}/{node_name}/play/{stream_id}.flv"),
-                    m3u8: format!("{addr}/{node_name}/play/{stream_id}.m3u8"),
-                    streamId: stream_id,
-                }
-            }
+            Some(addr) => Self {
+                flv: format!("{addr}/{node_name}/play/{stream_id}.flv"),
+                m3u8: format!("{addr}/{node_name}/play/{stream_id}.m3u8"),
+                streamId: stream_id,
+            },
         }
     }
 }

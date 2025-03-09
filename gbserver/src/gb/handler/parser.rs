@@ -98,7 +98,7 @@ pub mod header {
         for header in req.headers().iter() {
             match header {
                 Header::Other(key, val) => {
-                    if key.eq("X-GB-Ver") {
+                    if key.eq("X-GB-Version") {
                         return Some(val.to_string());
                         // return match &val[..] {
                         //     "1.0" => Some("GB/T 28181—2011".to_string()),

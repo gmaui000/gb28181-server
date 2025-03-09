@@ -29,6 +29,7 @@ use crate::general::model::StreamMode;
 use crate::storage::entity::GbsOauth;
 use crate::storage::mapper;
 
+const GB_VERSION: &str = "1.0";
 pub struct ResponseBuilder;
 
 impl ResponseBuilder {
@@ -55,7 +56,7 @@ impl ResponseBuilder {
 
     pub fn build_401_response(req: &Request, socket_addr: &SocketAddr) -> GlobalResult<SipMessage> {
         let mut response_header = Self::build_response_header(req, socket_addr)?;
-        let other_header = Header::Other(String::from("X-GB-Ver"), String::from("3.0"));
+        let other_header = Header::Other(String::from("X-GB-Version"), GB_VERSION.to_string());
         response_header.push(other_header);
         Ok(rsip::Response {
             status_code: 401.into(),
@@ -71,7 +72,7 @@ impl ResponseBuilder {
         socket_addr: &SocketAddr,
     ) -> GlobalResult<SipMessage> {
         let mut response_header = Self::build_response_header(req, socket_addr)?;
-        let other_header = Header::Other(String::from("X-GB-Ver"), String::from("3.0"));
+        let other_header = Header::Other(String::from("X-GB-Version"), GB_VERSION.to_string());
         response_header.push(other_header);
         let domain = parser::header::get_domain(req)?;
         response_header.push(
@@ -98,7 +99,7 @@ impl ResponseBuilder {
         socket_addr: &SocketAddr,
     ) -> GlobalResult<SipMessage> {
         let mut response_header = Self::build_response_header(req, socket_addr)?;
-        let other_header = Header::Other(String::from("X-GB-Ver"), String::from("3.0"));
+        let other_header = Header::Other(String::from("X-GB-Version"), GB_VERSION.to_string());
         response_header.push(other_header);
         Ok(rsip::Response {
             status_code: 200.into(),
@@ -284,6 +285,8 @@ impl RequestBuilder {
         body: &str,
         from_tag: &str,
         to_tag: &str,
+        seq: Option<u32>,
+        call_id: Option<String>,
     ) -> GlobalResult<(Ident, SipMessage)> {
         let (mut headers, uri) = Self::build_request_header(
             Some(channel_id),
@@ -294,10 +297,13 @@ impl RequestBuilder {
             Some(to_tag),
         )
         .await?;
-        let call_id_str = Uuid::new_v4().as_simple().to_string();
-        headers.push(rsip::headers::CallId::new(&call_id_str).into());
-        let mut rng = thread_rng();
-        let cs_eq_str = format!("{} INFO", rng.gen_range(12u8..255u8));
+        let call_id = call_id.unwrap_or_else(|| Uuid::new_v4().as_simple().to_string());
+        headers.push(rsip::headers::CallId::new(&call_id).into());
+        let seq = seq.unwrap_or_else(|| {
+            let mut rng = thread_rng();
+            rng.gen_range(12u32..255u32)
+        });
+        let cs_eq_str = format!("{} INFO", seq);
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
         headers.push(cs_eq);
 
@@ -311,7 +317,7 @@ impl RequestBuilder {
             body: body.as_bytes().to_vec(),
         }
         .into();
-        let ident = Ident::new(device_id.to_string(), call_id_str, cs_eq_str);
+        let ident = Ident::new(device_id.to_string(), call_id, cs_eq_str);
         Ok((ident, msg))
     }
 
@@ -505,21 +511,43 @@ impl RequestBuilder {
         seek: u32,
         from_tag: &str,
         to_tag: &str,
+        seq: u32,
+        call_id: String,
     ) -> GlobalResult<(Ident, SipMessage)> {
         let sdp = SdpBuilder::info_seek(seek);
-        Self::common_info_request(device_id, channel_id, &sdp, from_tag, to_tag).await
+        Self::common_info_request(
+            device_id,
+            channel_id,
+            &sdp,
+            from_tag,
+            to_tag,
+            Some(seq),
+            Some(call_id),
+        )
+        .await
     }
 
     // 倍速播放
     pub async fn speed(
         device_id: &String,
         channel_id: &String,
-        speed: u8,
+        speed: f32,
         from_tag: &str,
         to_tag: &str,
+        seq: u32,
+        call_id: String,
     ) -> GlobalResult<(Ident, SipMessage)> {
         let sdp = SdpBuilder::info_speed(speed);
-        Self::common_info_request(device_id, channel_id, &sdp, from_tag, to_tag).await
+        Self::common_info_request(
+            device_id,
+            channel_id,
+            &sdp,
+            from_tag,
+            to_tag,
+            Some(seq),
+            Some(call_id),
+        )
+        .await
     }
 
     // 暂停回放
@@ -528,9 +556,20 @@ impl RequestBuilder {
         channel_id: &String,
         from_tag: &str,
         to_tag: &str,
+        seq: u32,
+        call_id: String,
     ) -> GlobalResult<(Ident, SipMessage)> {
         let sdp = SdpBuilder::info_pause();
-        Self::common_info_request(device_id, channel_id, &sdp, from_tag, to_tag).await
+        Self::common_info_request(
+            device_id,
+            channel_id,
+            &sdp,
+            from_tag,
+            to_tag,
+            Some(seq),
+            Some(call_id),
+        )
+        .await
     }
 
     // 恢复回放
@@ -539,9 +578,20 @@ impl RequestBuilder {
         channel_id: &String,
         from_tag: &str,
         to_tag: &str,
+        seq: u32,
+        call_id: String,
     ) -> GlobalResult<(Ident, SipMessage)> {
         let sdp = SdpBuilder::info_replay();
-        Self::common_info_request(device_id, channel_id, &sdp, from_tag, to_tag).await
+        Self::common_info_request(
+            device_id,
+            channel_id,
+            &sdp,
+            from_tag,
+            to_tag,
+            Some(seq),
+            Some(call_id),
+        )
+        .await
     }
 
     async fn build_stream_request(
@@ -723,7 +773,7 @@ impl SdpBuilder {
     }
 
     //倍速播放
-    pub fn info_speed(speed: u8) -> String {
+    pub fn info_speed(speed: f32) -> String {
         let mut sdp = String::with_capacity(100);
         sdp.push_str("PLAY RTSP/1.0\r\n");
         sdp.push_str(&format!("CSeq: {}\r\n", Local::now().timestamp()));

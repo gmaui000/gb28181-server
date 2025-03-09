@@ -141,7 +141,7 @@ impl Register {
             )))
             .hand_log(|msg| warn!("{msg}"))?;
         if oauth.get_status() == &0u8 {
-            warn!("device id = [{}] 未启用设备，拒绝接入", device_id);
+            warn!("device id = [{}] 未启用设备，进入鉴权", device_id);
         }
         match oauth.get_pwd_check() {
             //不进行鉴权校验
@@ -199,6 +199,7 @@ impl Register {
         let zip = Zip::build_data(Package::new(bill.clone(), Bytes::from(ok_response)));
         let _ = tx.clone().send(zip).await.hand_log(|msg| warn!("{msg}"));
 
+        info!("register ok. sent queryDeviceInfo & queryDeviceCatalog.");
         // query subscribe device msg
         cmd::CmdQuery::lazy_query_device_info(device_id).await?;
         // cmd::CmdQuery::lazy_subscribe_device_catalog(device_id).await?;

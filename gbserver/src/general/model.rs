@@ -9,6 +9,33 @@ use common::exception::GlobalResult;
 
 use crate::general;
 
+#[derive(Debug, Get)]
+pub struct MediaAddress {
+    ip: String,
+    port: u16,
+}
+
+impl MediaAddress {
+    pub fn build(ip: String, port: u16) -> Self {
+        Self { ip, port }
+    }
+}
+
+#[derive(Debug, Get)]
+pub struct TimeRange {
+    start_time: u32,
+    end_time: u32,
+}
+
+impl TimeRange {
+    pub fn build(start_time: u32, end_time: u32) -> Self {
+        Self {
+            start_time,
+            end_time,
+        }
+    }
+}
+
 pub enum StreamMode {
     Udp,
     TcpActive,
@@ -82,9 +109,6 @@ pub struct PlayLiveModel {
     channel_id: Option<String>,
     #[oai(validator(maximum(value = "2"), minimum(value = "0")))]
     trans_mode: Option<u8>,
-    #[oai(validator(maximum(value = "2"), minimum(value = "0")))]
-    /// 媒体类型，默认flv,hls开启,(todo 2-mp4 3-webrtc ...)
-    media_type: Option<u8>,
 }
 
 #[derive(Debug, Deserialize, Object, Serialize, Get)]

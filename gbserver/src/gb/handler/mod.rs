@@ -1,5 +1,5 @@
-pub mod requester;
-pub mod events;
 mod builder;
-pub mod parser;
 pub mod cmd;
+pub mod events;
+pub mod parser;
+pub mod requester;

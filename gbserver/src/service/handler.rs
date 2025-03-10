@@ -12,7 +12,8 @@ use crate::gb::RWSession;
 use crate::general;
 use crate::general::cache::PlayType;
 use crate::general::model::{
-    PlayBackModel, PlayLiveModel, PlaySeekModel, PlaySpeedModel, StreamInfo, StreamMode,
+    MediaAddress, PlayBackModel, PlayLiveModel, PlaySeekModel, PlaySpeedModel, StreamInfo,
+    StreamMode, TimeRange,
 };
 use crate::service::{
     callback, BaseStreamInfo, StreamPlayInfo, StreamState, EXPIRES, RELOAD_EXPIRES,
@@ -112,8 +113,14 @@ pub async fn play_live(play_live_model: PlayLiveModel, token: String) -> GlobalR
         general::cache::Cache::stream_map_insert_token(stream_id.clone(), token);
         return Ok(StreamInfo::build(stream_id, node_name));
     }
-    let (stream_id, node_name) =
-        start_invite_stream(device_id, channel_id, &token, play_type, 0, 0).await?;
+    let (stream_id, node_name) = start_invite_stream(
+        device_id,
+        channel_id,
+        &token,
+        play_type,
+        TimeRange::build(0, 0),
+    )
+    .await?;
     general::cache::Cache::stream_map_insert_token(stream_id.clone(), token);
     Ok(StreamInfo::build(stream_id, node_name))
 }
@@ -140,8 +147,14 @@ pub async fn play_back(play_back_model: PlayBackModel, token: String) -> GlobalR
     }
     let st = play_back_model.get_st();
     let et = play_back_model.get_et();
-    let (stream_id, node_name) =
-        start_invite_stream(device_id, channel_id, &token, play_type, *st, *et).await?;
+    let (stream_id, node_name) = start_invite_stream(
+        device_id,
+        channel_id,
+        &token,
+        play_type,
+        TimeRange::build(*st, *et),
+    )
+    .await?;
     general::cache::Cache::stream_map_insert_token(stream_id.clone(), token);
     Ok(StreamInfo::build(stream_id, node_name))
 }
@@ -192,10 +205,9 @@ pub async fn speed(speed_mode: PlaySpeedModel, _token: String) -> GlobalResult<b
 async fn start_invite_stream(
     device_id: &String,
     channel_id: &String,
-    token: &str,
+    _token: &str,
     play_type: PlayType,
-    st: u32,
-    et: u32,
+    range: TimeRange,
 ) -> GlobalResult<(String, String)> {
     let num_ssrc = general::cache::Cache::ssrc_sn_get().ok_or_else(|| {
         GlobalError::new_biz_error(1100, "ssrc已用完,并发达上限,等待释放", |msg| {
@@ -206,26 +218,28 @@ async fn start_invite_stream(
     let (ssrc, stream_id) =
         id_builder::build_ssrc_stream_id(device_id, channel_id, num_ssrc, true).await?;
     let conf = general::StreamConf::get_stream_conf();
-    //选择负载最小的节点开始尝试：节点是否可用;
-    while let Some((_, node_name)) = node_sets.pop_first() {
+    //TODO: 选择负载最小的节点开始尝试：节点是否可用;
+    if let Some((_, node_name)) = node_sets.pop_first() {
         let stream_node = conf.get_node_map().get(&node_name).unwrap();
-        //next 将sdp支持从session固定的，转为stream支持的
-        if let Ok(true) = callback::call_listen_ssrc(
-            stream_id.clone(),
-            &ssrc,
-            token,
-            stream_node.get_local_ip(),
-            stream_node.get_local_port(),
-        )
-        .await
+        //TODO: 将sdp支持从session固定的，转为stream支持的
+        // if let Ok(true) = callback::_call_listen_ssrc(
+        //     stream_id.clone(),
+        //     &ssrc,
+        //     token,
+        //     stream_node.get_local_ip(),
+        //     stream_node.get_local_port(),
+        // )
+        // .await
         {
-            let (res, media_map, from_tag, to_tag) = match play_type {
+            let (res, _media_map, from_tag, to_tag) = match play_type {
                 PlayType::Live => {
                     CmdStream::play_live_invite(
                         device_id,
                         channel_id,
-                        &stream_node.get_pub_ip().to_string(),
-                        *stream_node.get_pub_port(),
+                        MediaAddress::build(
+                            stream_node.get_pub_ip().to_string(),
+                            *stream_node.get_pub_port(),
+                        ),
                         StreamMode::Udp,
                         &ssrc,
                     )
@@ -235,26 +249,27 @@ async fn start_invite_stream(
                     CmdStream::play_back_invite(
                         device_id,
                         channel_id,
-                        &stream_node.get_pub_ip().to_string(),
-                        *stream_node.get_pub_port(),
+                        MediaAddress::build(
+                            stream_node.get_pub_ip().to_string(),
+                            *stream_node.get_pub_port(),
+                        ),
                         StreamMode::Udp,
                         &ssrc,
-                        st,
-                        et,
+                        range,
                     )
                     .await?
                 } // PlayType::Down => {}
             };
 
-            //回调给gbs-stream 使其确认媒体类型
-            let _ = callback::ident_rtp_media_info(
-                &ssrc,
-                media_map,
-                token,
-                stream_node.get_local_ip(),
-                stream_node.get_local_port(),
-            )
-            .await;
+            //回调给zlm 使其确认媒体类型
+            // let _ = callback::_ident_rtp_media_info(
+            //     &ssrc,
+            //     media_map,
+            //     token,
+            //     stream_node.get_local_ip(),
+            //     stream_node.get_local_port(),
+            // )
+            // .await;
             let (call_id, seq) = CmdStream::invite_ack(device_id, &res)?;
             return if let Some(_base_stream_info) =
                 listen_stream_by_stream_id(&stream_id, RELOAD_EXPIRES).await
@@ -306,7 +321,7 @@ async fn enable_invite_stream(
     match general::cache::Cache::device_map_get_invite_info(device_id, channel_id, play_type) {
         None => None,
         //session -> true
-        Some((stream_id, ssrc)) => {
+        Some((stream_id, _ssrc)) => {
             let mut res = None;
             if let Some(node_name) = general::cache::Cache::stream_map_query_node_name(&stream_id) {
                 //确认stream是否存在
@@ -324,14 +339,14 @@ async fn enable_invite_stream(
                     {
                         if count == 0 {
                             //session有流信息,stream无流存在=>进一步判断可能是stream重启导致没有该监听,重启监听等待结果
-                            if let Ok(true) = callback::call_listen_ssrc(
-                                stream_id.clone(),
-                                &ssrc,
-                                token,
-                                stream_node.get_local_ip(),
-                                stream_node.get_local_port(),
-                            )
-                            .await
+                            // if let Ok(true) = callback::_call_listen_ssrc(
+                            //     stream_id.clone(),
+                            //     &ssrc,
+                            //     token,
+                            //     stream_node.get_local_ip(),
+                            //     stream_node.get_local_port(),
+                            // )
+                            // .await
                             {
                                 if (listen_stream_by_stream_id(&stream_id, EXPIRES).await).is_some()
                                 {

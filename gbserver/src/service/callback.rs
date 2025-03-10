@@ -100,7 +100,7 @@ pub struct SsrcLisDto {
     pub hls: Option<HlsDto>,
 }
 
-pub async fn call_listen_ssrc(
+pub async fn _call_listen_ssrc(
     stream_id: String,
     ssrc: &str,
     gbs_token: &str,
@@ -143,7 +143,7 @@ struct RtpMap {
     map: HashMap<u8, String>,
 }
 
-pub async fn ident_rtp_media_info(
+pub async fn _ident_rtp_media_info(
     ssrc: &str,
     map: HashMap<u8, String>,
     gbs_token: &str,

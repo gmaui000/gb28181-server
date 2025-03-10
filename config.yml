@@ -1,22 +1,22 @@
 log:
-  level: info
-  prefix: gbserver
+  level: trace
+  prefix: gbs
   store_path: ./logs
   specify:
     - crate_name: poem::server
-      level: debug
+      level: trace
       file_name_prefix: poem #日志文件前缀
       additivity: false #是否记录到默认日志文件中
     - crate_name: sqlx  #sqlx用指全部，可sqlx::xxx
-      level: info #日志等级
+      level: trace #日志等级
       file_name_prefix: sql #日志文件前缀
       additivity: false #是否记录到其默认日志文件中
     - crate_name: gbserver::gb::io$  #信令日志
-      level: debug #日志等级
+      level: trace #日志等级
       file_name_prefix: gb #日志文件前缀
       additivity: false #是否记录到其默认日志文件中
     - crate_name: gbserver::web  #请求日志
-      level: info #日志等级
+      level: trace #日志等级
       file_name_prefix: web #日志文件前缀
       additivity: false #是否记录到其默认日志文件中
 
@@ -24,9 +24,9 @@ log:
 http:
   port: 18567
   timeout: 30   #请求超时 单位秒
-  prefix: /gbserver
+  prefix: /gbs
   server_name: gbserver
-  version: v0.2
+  version: v0.1
 
 db:
   mysql:
@@ -72,7 +72,7 @@ server:
       - name: s1 #流媒体服务的标识，节点名称，唯一值，不能与其他节点重复
         pub_ip: 192.168.31.164 #流媒体服务接收rtp流的公网地址
         pub_port: 10000 #流媒体服务接收rtp流的端口
-        local_ip: 127.0.0.1 #节点局域网IP，用于流媒体服务之间通信
+        local_ip: 192.168.31.164 #节点局域网IP，用于流媒体服务之间通信
         local_port: 10000 #节点局域网端口，用于流媒体服务之间通信
 #      - name: s2 #流媒体服务的标识，节点名称，唯一值，不能与其他节点重复
 #        pub_ip: 172.18.38.186 #流媒体服务接收rtp流的公网地址

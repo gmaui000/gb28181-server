@@ -25,11 +25,12 @@ use crate::gb::handler::events::event::Ident;
 use crate::gb::handler::parser;
 use crate::gb::shared::rw::RWSession;
 use crate::gb::SessionConf;
-use crate::general::model::StreamMode;
+use crate::general::model::{MediaAddress, StreamMode, TimeRange};
 use crate::storage::entity::GbsOauth;
 use crate::storage::mapper;
 
 const GB_VERSION: &str = "1.0";
+
 pub struct ResponseBuilder;
 
 impl ResponseBuilder {
@@ -351,7 +352,7 @@ impl RequestBuilder {
         let conf = SessionConf::get_session_by_conf();
         let server_ip = &conf.get_wan_ip().to_string();
         let server_port = conf.get_wan_port();
-        //domain宜采用ID统一编码的前十位编码,扩展支持十位编码加“.spvmn.cn”后缀格式,或采用IP:port格式,port宜采用5060;这里统一使用device_id的前十位,不再调用DB进行判断原设备的使用方式
+        // domain宜采用ID统一编码的前十位编码,扩展支持十位编码加“.spvmn.cn”后缀格式,或采用IP:port格式,port宜采用5060;这里统一使用device_id的前十位,不再调用DB进行判断原设备的使用方式
         // let gbs_device = GbsDevice::query_gbs_device_by_device_id(&device_id.to_string())?.ok_or(SysErr(anyhow!("设备：{device_id}-{channel_id:?}未注册或已离线。")))?;
         let oauth = GbsOauth::read_gbs_oauth_by_device_id(device_id)
             .await?
@@ -419,12 +420,11 @@ impl RequestBuilder {
     pub async fn play_live_request(
         device_id: &String,
         channel_id: &String,
-        dst_ip: &String,
-        dst_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
     ) -> GlobalResult<(Ident, SipMessage)> {
-        let sdp = SdpBuilder::play_live(channel_id, dst_ip, dst_port, stream_mode, ssrc)?;
+        let sdp = SdpBuilder::play_live(channel_id, media_address, stream_mode, ssrc)?;
         Self::build_stream_request(device_id, channel_id, ssrc, sdp).await
     }
 
@@ -432,14 +432,12 @@ impl RequestBuilder {
     pub async fn playback(
         device_id: &String,
         channel_id: &String,
-        dst_ip: &String,
-        dst_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
-        st: u32,
-        et: u32,
+        range: TimeRange,
     ) -> GlobalResult<(Ident, SipMessage)> {
-        let sdp = SdpBuilder::playback(channel_id, dst_ip, dst_port, stream_mode, ssrc, st, et)?;
+        let sdp = SdpBuilder::playback(channel_id, media_address, stream_mode, ssrc, range)?;
         Self::build_stream_request(device_id, channel_id, ssrc, sdp).await
     }
 
@@ -447,24 +445,13 @@ impl RequestBuilder {
     pub async fn download(
         device_id: &String,
         channel_id: &String,
-        dst_ip: &String,
-        dst_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
-        st: u32,
-        et: u32,
+        range: TimeRange,
         speed: u8,
     ) -> GlobalResult<(Ident, SipMessage)> {
-        let sdp = SdpBuilder::download(
-            channel_id,
-            dst_ip,
-            dst_port,
-            stream_mode,
-            ssrc,
-            st,
-            et,
-            speed,
-        )?;
+        let sdp = SdpBuilder::download(channel_id, media_address, stream_mode, ssrc, range, speed)?;
         Self::build_stream_request(device_id, channel_id, ssrc, sdp).await
     }
 
@@ -792,23 +779,18 @@ impl SdpBuilder {
 
     pub fn playback(
         channel_id: &String,
-        media_ip: &String,
-        media_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
-        st: u32,
-        et: u32,
+        range: TimeRange,
     ) -> GlobalResult<String> {
-        let st_et = format!("{} {}", st, et);
         let sdp = Self::build_common_play(
             channel_id,
-            media_ip,
-            media_port,
+            media_address,
             stream_mode,
             ssrc,
             "Playback",
-            &st_et,
-            true,
+            range,
             None,
         )?;
         Ok(sdp)
@@ -816,44 +798,36 @@ impl SdpBuilder {
 
     pub fn download(
         channel_id: &String,
-        media_ip: &String,
-        media_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
-        st: u32,
-        et: u32,
+        range: TimeRange,
         download_speed: u8,
     ) -> GlobalResult<String> {
-        let st_et = format!("{} {}", st, et);
         let sdp = Self::build_common_play(
             channel_id,
-            media_ip,
-            media_port,
+            media_address,
             stream_mode,
             ssrc,
             "Download",
-            &st_et,
-            true,
+            range,
             Some(download_speed),
         )?;
         Ok(sdp)
     }
     pub fn play_live(
         channel_id: &String,
-        media_ip: &String,
-        media_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
     ) -> GlobalResult<String> {
         let sdp = Self::build_common_play(
             channel_id,
-            media_ip,
-            media_port,
+            media_address,
             stream_mode,
             ssrc,
             "Play",
-            "0 0",
-            false,
+            TimeRange::build(0, 0),
             None,
         )?;
         Ok(sdp)
@@ -862,13 +836,11 @@ impl SdpBuilder {
     ///缺s:Play/Playback/Download; t:开始时间戳 结束时间戳; u:回放与下载时的取流地址
     fn build_common_play(
         channel_id: &String,
-        media_ip: &String,
-        media_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
         name: &str,
-        st_et: &str,
-        u: bool,
+        range: TimeRange,
         download_speed: Option<u8>,
     ) -> GlobalResult<String> {
         let conf = SessionConf::get_session_by_conf();
@@ -877,20 +849,24 @@ impl SdpBuilder {
         sdp.push_str("v=0\r\n");
         sdp.push_str(&format!("o={} 0 0 IN IP4 {}\r\n", channel_id, session_ip));
         sdp.push_str(&format!("s={}\r\n", name));
-        if u {
+        if name == "Play" {
             sdp.push_str(&format!("u={}:0\r\n", channel_id));
         }
-        sdp.push_str(&format!("c=IN IP4 {}\r\n", media_ip));
-        sdp.push_str(&format!("t={}\r\n", st_et));
+        sdp.push_str(&format!("c=IN IP4 {}\r\n", media_address.get_ip()));
+        sdp.push_str(&format!(
+            "t={} {}\r\n",
+            range.get_start_time(),
+            range.get_end_time()
+        ));
         match stream_mode {
             StreamMode::Udp => sdp.push_str(&format!(
                 "m=video {} RTP/AVP 96 97 98 99 100\r\n",
-                media_port
+                media_address.get_port()
             )),
             StreamMode::TcpActive => {
                 sdp.push_str(&format!(
                     "m=video {} TCP/RTP/AVP 96 97 98 99 100\r\n",
-                    media_port
+                    media_address.get_port()
                 ));
                 sdp.push_str("a=setup:active\r\n");
                 sdp.push_str("a=connection:new\r\n");
@@ -898,7 +874,7 @@ impl SdpBuilder {
             StreamMode::TcpPassive => {
                 sdp.push_str(&format!(
                     "m=video {} TCP/RTP/AVP 96 97 98 99 100\r\n",
-                    media_port
+                    media_address.get_port()
                 ));
                 sdp.push_str("a=setup:passive\r\n");
                 sdp.push_str("a=connection:new\r\n");

@@ -28,7 +28,7 @@ pub struct Http {
 serde_default!(default_port, u16, 8080);
 serde_default!(default_timeout, u16, 30);
 serde_default!(default_prefix, String, "/gbs".to_string());
-serde_default!(default_server_name, String, "web-server".to_string());
+serde_default!(default_server_name, String, "gbserver".to_string());
 serde_default!(default_version, String, "v0.1".to_string());
 impl Http {
     pub fn get_http_by_conf() -> Self {
@@ -47,7 +47,7 @@ impl Http {
             &self.server_name,
             &self.version,
         )
-        .server(format!("http://0.0.0.0:{}{}", &self.port, &self.prefix));
+        .server(format!("http://localhost:{}{}", &self.port, &self.prefix));
         let ui = service.swagger_ui();
         let route = Route::new()
             .nest(

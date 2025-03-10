@@ -13,7 +13,7 @@ use common::tokio::time::Instant;
 use crate::gb::handler::builder::{RequestBuilder, ResponseBuilder};
 use crate::gb::handler::events::event::{Container, EventSession, Ident};
 use crate::gb::shared::rw::RequestOutput;
-use crate::general::model::StreamMode;
+use crate::general::model::{MediaAddress, StreamMode, TimeRange};
 use crate::storage::entity::GbsDevice;
 
 pub struct CmdResponse;
@@ -95,22 +95,18 @@ impl CmdStream {
     pub async fn play_back_invite(
         device_id: &String,
         channel_id: &String,
-        dst_ip: &String,
-        dst_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
-        st: u32,
-        et: u32,
+        range: TimeRange,
     ) -> GlobalResult<(Response, HashMap<u8, String>, String, String)> {
         let (ident, msg) = RequestBuilder::playback(
             device_id,
             channel_id,
-            dst_ip,
-            dst_port,
+            media_address,
             stream_mode,
             ssrc,
-            st,
-            et,
+            range,
         )
         .await
         .hand_log(|msg| warn!("{msg}"))?;
@@ -119,16 +115,14 @@ impl CmdStream {
     pub async fn play_live_invite(
         device_id: &String,
         channel_id: &String,
-        dst_ip: &String,
-        dst_port: u16,
+        media_address: MediaAddress,
         stream_mode: StreamMode,
         ssrc: &String,
     ) -> GlobalResult<(Response, HashMap<u8, String>, String, String)> {
         let (ident, msg) = RequestBuilder::play_live_request(
             device_id,
             channel_id,
-            dst_ip,
-            dst_port,
+            media_address,
             stream_mode,
             ssrc,
         )

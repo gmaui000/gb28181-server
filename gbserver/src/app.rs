@@ -1,14 +1,12 @@
-use std::net::UdpSocket;
-
+use crate::gb::SessionConf;
+use crate::general::http::Http;
 use common::daemon::Daemon;
 use common::dbx::mysqlx;
 use common::exception::{GlobalError, GlobalResult, TransError};
 use common::log::{error, info};
 use common::logger;
 use common::tokio;
-
-use crate::gb::SessionConf;
-use crate::general::http::Http;
+use std::net::UdpSocket;
 
 #[derive(Debug)]
 pub struct AppInfo {

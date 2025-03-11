@@ -1,5 +1,5 @@
-use crate::storage::entity::GbsOauth;
-use crate::storage::mapper;
+use crate::store::entity::GbsOauth;
+use crate::store::mapper;
 use common::exception::{GlobalError, GlobalResult};
 use common::log::error;
 use std::time::{SystemTime, UNIX_EPOCH};

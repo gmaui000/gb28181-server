@@ -9,7 +9,6 @@ use crate::service::{
 use common::log::info;
 use poem_openapi::payload::Json;
 use poem_openapi::OpenApi;
-
 pub struct HookApi;
 
 #[OpenApi(prefix_path = "/index/hook")]

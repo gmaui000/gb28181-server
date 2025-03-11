@@ -1,12 +1,10 @@
+use crate::general::model::*;
+use crate::service::handler;
+use common::exception::GlobalError;
 use common::log::{error, info};
 use poem_openapi::param::Header;
 use poem_openapi::payload::Json;
 use poem_openapi::OpenApi;
-
-use common::exception::GlobalError;
-
-use crate::general::model::*;
-use crate::service::handler;
 
 pub struct RestApi;
 

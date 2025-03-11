@@ -1,12 +1,11 @@
+// #![allow(warnings)]
 use crate::app::AppInfo;
 use common::daemon::Daemon;
-
-// #![allow(warnings)]
 mod app;
 pub mod gb;
 pub mod general;
 mod service;
-pub mod storage;
+pub mod store;
 mod utils;
 mod web;
 

@@ -1,15 +1,12 @@
+use common::constructor::{Get, New};
 use common::serde::{Deserialize, Serialize};
 use poem_openapi::{
     types::{ParseFromJSON, ToJSON, Type},
     Enum, Object,
 };
-
-use common::constructor::{Get, New};
-
 mod callback;
 pub mod control;
 pub mod handler;
-
 pub const EXPIRES: u64 = 8;
 pub const RELOAD_EXPIRES: u64 = 2;
 

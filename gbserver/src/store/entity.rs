@@ -1,5 +1,4 @@
-use rsip::Request;
-
+use crate::gb::handler::parser;
 use common::chrono::{Local, NaiveDateTime};
 use common::constructor::{Get, Set};
 use common::dbx::mysqlx::get_conn_by_pool;
@@ -8,8 +7,7 @@ use common::log::error;
 use common::serde::{Deserialize, Serialize};
 use common::sqlx;
 use common::sqlx::FromRow;
-
-use crate::gb::handler::parser;
+use rsip::Request;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Get, Set, FromRow)]
 #[serde(crate = "common::serde")]

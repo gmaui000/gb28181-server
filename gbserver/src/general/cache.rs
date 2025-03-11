@@ -1,3 +1,4 @@
+use crate::general;
 use common::bytes::Bytes;
 use common::dashmap::mapref::entry::Entry;
 use common::dashmap::{DashMap, DashSet};
@@ -17,8 +18,6 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-
-use crate::general;
 
 static GENERAL_CACHE: Lazy<Cache> = Lazy::new(Cache::init);
 

@@ -5,7 +5,6 @@ use common::serde::Deserialize;
 use common::serde_default;
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
-
 pub mod cache;
 pub mod http;
 pub mod model;

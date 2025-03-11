@@ -1,7 +1,18 @@
-use std::convert::TryFrom;
-use std::net::SocketAddr;
-
+use crate::gb::handler::events::event::Ident;
+use crate::gb::handler::parser;
+use crate::gb::shared::rw::RWSession;
+use crate::gb::SessionConf;
+use crate::general::model::{MediaAddress, PtzControlModel, StreamMode, TimeRange};
+use crate::store::entity::GbsOauth;
+use crate::store::mapper;
+use common::anyhow::anyhow;
+use common::chrono::Local;
+use common::exception::GlobalError::SysErr;
+use common::exception::{GlobalResult, TransError};
 use common::log::error;
+use common::log::warn;
+use common::rand::prelude::StdRng;
+use common::rand::{thread_rng, Rng, SeedableRng};
 use rsip::headers::typed;
 use rsip::message::HeadersExt;
 use rsip::param::{OtherParam, OtherParamValue};
@@ -11,24 +22,10 @@ use rsip::Param::Other;
 use rsip::{
     header, headers, param, uri, Error, Header, Method, Param, Request, Response, SipMessage, Uri,
 };
+use std::convert::TryFrom;
 use std::fmt::Write;
+use std::net::SocketAddr;
 use uuid::Uuid;
-
-use common::anyhow::anyhow;
-use common::chrono::Local;
-use common::exception::GlobalError::SysErr;
-use common::exception::{GlobalResult, TransError};
-use common::log::warn;
-use common::rand::prelude::StdRng;
-use common::rand::{thread_rng, Rng, SeedableRng};
-
-use crate::gb::handler::events::event::Ident;
-use crate::gb::handler::parser;
-use crate::gb::shared::rw::RWSession;
-use crate::gb::SessionConf;
-use crate::general::model::{MediaAddress, PtzControlModel, StreamMode, TimeRange};
-use crate::storage::entity::GbsOauth;
-use crate::storage::mapper;
 
 const GB_VERSION: &str = "1.0";
 

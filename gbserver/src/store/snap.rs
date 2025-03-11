@@ -12,8 +12,8 @@ use std::thread;
 
 #[derive(Debug, Get, Deserialize)]
 #[serde(crate = "common::serde")]
-#[conf(prefix = "server.pics")]
-pub struct Pics {
+#[conf(prefix = "server.snap")]
+pub struct Snap {
     #[serde(default = "default_enable")]
     enable: bool,
     #[serde(default = "default_cycle")]
@@ -31,22 +31,22 @@ serde_default!(default_enable, bool, true);
 serde_default!(default_cycle, u16, 300);
 serde_default!(default_num, u8, 1);
 serde_default!(default_interval, u8, 1);
-serde_default!(default_raw_path, String, "./pics/raw".to_string());
+serde_default!(default_raw_path, String, "./snap/raw".to_string());
 serde_default!(
     default_snapshot_path,
     String,
-    "./pics/snapshot_path".to_string()
+    "./snap/snapshot_path".to_string()
 );
 
-impl Pics {
-    pub fn get_pics_by_conf() -> &'static Self {
-        static INSTANCE: Lazy<Pics> = Lazy::new(|| {
-            let pics: Pics = Pics::conf();
-            let _ = std::fs::create_dir_all(&pics.raw_path)
+impl Snap {
+    pub fn get_snap_by_conf() -> &'static Self {
+        static INSTANCE: Lazy<Snap> = Lazy::new(|| {
+            let snap = Snap::conf();
+            let _ = std::fs::create_dir_all(&snap.raw_path)
                 .hand_log(|msg| error!("create raw_path dir failed: {msg}"));
-            let _ = std::fs::create_dir_all(&pics.snapshot_path)
+            let _ = std::fs::create_dir_all(&snap.snapshot_path)
                 .hand_log(|msg| error!("create snapshot_path dir failed: {msg}"));
-            pics
+            snap
         });
         &INSTANCE
     }
@@ -69,28 +69,28 @@ impl ImageInfo {
                 .spawn(move || {
                     let r = rayon::ThreadPoolBuilder::new()
                         .build()
-                        .expect("pics: rayon init failed");
+                        .expect("snap: rayon init failed");
                     r.scope(|s| {
                         s.spawn(move |_| {
                             rx.iter().for_each(|image_info: ImageInfo| {
-                                let _ = image_info.hand_pic();
+                                let _ = image_info.hand_snap();
                             })
                         })
                     })
                 })
-                .expect("Storage:pic background thread create failed");
+                .expect("Store:snap background thread create failed");
             tx
         });
         SENDER.clone()
     }
 
-    fn hand_pic(self) -> GlobalResult<()> {
+    fn hand_snap(self) -> GlobalResult<()> {
         if let Some(ty) = self.image_type.get(6..) {
             if let Some(format) = ImageFormat::from_extension(ty) {
                 let l_img = image::load_from_memory_with_format(&self.data, format)
                     .hand_log(|msg| error!("{msg}"))?;
-                let small_path = Pics::get_pics_by_conf().get_snapshot_path();
-                let large_path = Pics::get_pics_by_conf().get_raw_path();
+                let small_path = Snap::get_snap_by_conf().get_snapshot_path();
+                let large_path = Snap::get_snap_by_conf().get_raw_path();
                 let s_path = Path::new(small_path).join(format!("s{}.{}", self.file_name, ty));
                 let l_path = Path::new(large_path).join(format!("l{}.{}", self.file_name, ty));
                 let s_img = l_img.thumbnail(240, 240);

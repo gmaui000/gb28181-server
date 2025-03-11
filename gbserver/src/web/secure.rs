@@ -2,15 +2,14 @@ use crate::service;
 use common::log::error;
 use poem::web::Multipart;
 use poem_openapi::{param::Query, OpenApi};
-
 pub struct SecureApi;
 
 #[OpenApi(prefix_path = "/secure")]
 impl SecureApi {
     #[allow(non_snake_case)]
-    #[oai(path = "/pic/upload", method = "post")]
+    #[oai(path = "/snap/upload", method = "post")]
     ///设备抓图上传 todo
-    async fn pic_upload(
+    async fn snap_upload(
         &self,
         #[oai(name = "uk")] uk: Query<String>,
         #[oai(name = "sessionId")] sessionId: Query<Option<String>>,

@@ -5,8 +5,8 @@
 3.持久化2/3地址索引到数据库建立设备时间关系
 */
 
+use crate::store::snap::ImageInfo;
 use poem::web::Field;
-use crate::storage::pics::ImageInfo;
 
 // pub struct UploadInfo {
 //     load: Vec<u8>,
@@ -16,7 +16,13 @@ use crate::storage::pics::ImageInfo;
 // }
 
 //Field { name: "upload", file_name: "天府新区.jpg", content_type: "image/jpeg" }
-pub async fn upload(field: Field, _uk: String, _session_id: Option<String>,file_id: Option<String>, snap_shot_file_id: Option<String>) {
+pub async fn upload(
+    field: Field,
+    _uk: String,
+    _session_id: Option<String>,
+    file_id: Option<String>,
+    snap_shot_file_id: Option<String>,
+) {
     //todo 验证uk
     //todo 持久化到db建立图片设备时间关系
     let file_name = if let Some(f_id) = file_id {
@@ -25,7 +31,7 @@ pub async fn upload(field: Field, _uk: String, _session_id: Option<String>,file_
         ssf_if
     } else if let Some(ff_name) = field.file_name() {
         ff_name.to_string()
-    }else {
+    } else {
         "session_id".to_string()
     };
     let file_type = field.content_type().unwrap().to_string();
@@ -36,6 +42,6 @@ pub async fn upload(field: Field, _uk: String, _session_id: Option<String>,file_
 }
 
 // pub async fn snapshot_image(){
-//     let _conf = Pics::get_pics_by_conf();
+//     let _conf = Snap::get_snap_by_conf();
 //     unimplemented!()
 // }

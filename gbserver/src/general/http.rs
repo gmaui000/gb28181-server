@@ -43,7 +43,11 @@ impl Http {
 
     pub async fn run(&self, listener: std::net::TcpListener) -> GlobalResult<()> {
         let service = OpenApiService::new(
-            (web::api::RestApi, web::hook::HookApi, web::se::SeApi),
+            (
+                web::api::RestApi,
+                web::hook::HookApi,
+                web::secure::SecureApi,
+            ),
             &self.server_name,
             &self.version,
         )

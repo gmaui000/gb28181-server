@@ -3,10 +3,10 @@ use common::log::error;
 use poem::web::Multipart;
 use poem_openapi::{param::Query, OpenApi};
 
-pub struct SeApi;
+pub struct SecureApi;
 
-#[OpenApi(prefix_path = "/se")]
-impl SeApi {
+#[OpenApi(prefix_path = "/secure")]
+impl SecureApi {
     #[allow(non_snake_case)]
     #[oai(path = "/pic/upload", method = "post")]
     ///设备抓图上传 todo

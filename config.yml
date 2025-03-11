@@ -1,28 +1,28 @@
 log:
-  level: trace
+  level: info
   prefix: gbs
   store_path: ./logs
   specify:
     - crate_name: poem::server
-      level: trace
+      level: info
       file_name_prefix: poem #日志文件前缀
       additivity: false #是否记录到默认日志文件中
     - crate_name: sqlx  #sqlx用指全部，可sqlx::xxx
-      level: trace #日志等级
+      level: info #日志等级
       file_name_prefix: sql #日志文件前缀
       additivity: false #是否记录到其默认日志文件中
     - crate_name: gbserver::gb::io$  #信令日志
-      level: trace #日志等级
+      level: debug #日志等级
       file_name_prefix: gb #日志文件前缀
       additivity: false #是否记录到其默认日志文件中
     - crate_name: gbserver::web  #请求日志
-      level: trace #日志等级
+      level: debug #日志等级
       file_name_prefix: web #日志文件前缀
       additivity: false #是否记录到其默认日志文件中
 
 
 http:
-  port: 18567
+  port: 18080
   timeout: 30   #请求超时 单位秒
   prefix: /gbs
   server_name: gbserver

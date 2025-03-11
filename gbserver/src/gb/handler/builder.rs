@@ -27,7 +27,7 @@ use std::fmt::Write;
 use std::net::SocketAddr;
 use uuid::Uuid;
 
-const GB_VERSION: &str = "1.0";
+const GB_VERSION: &str = "3.0";
 
 pub struct ResponseBuilder;
 
@@ -55,7 +55,7 @@ impl ResponseBuilder {
 
     pub fn build_401_response(req: &Request, socket_addr: &SocketAddr) -> GlobalResult<SipMessage> {
         let mut response_header = Self::build_response_header(req, socket_addr)?;
-        let other_header = Header::Other(String::from("X-GB-Version"), GB_VERSION.to_string());
+        let other_header = Header::Other(String::from("X-GB-Ver"), GB_VERSION.to_string());
         response_header.push(other_header);
         Ok(rsip::Response {
             status_code: 401.into(),
@@ -71,7 +71,7 @@ impl ResponseBuilder {
         socket_addr: &SocketAddr,
     ) -> GlobalResult<SipMessage> {
         let mut response_header = Self::build_response_header(req, socket_addr)?;
-        let other_header = Header::Other(String::from("X-GB-Version"), GB_VERSION.to_string());
+        let other_header = Header::Other(String::from("X-GB-Ver"), GB_VERSION.to_string());
         response_header.push(other_header);
         let domain = parser::header::get_domain(req)?;
         response_header.push(
@@ -98,7 +98,7 @@ impl ResponseBuilder {
         socket_addr: &SocketAddr,
     ) -> GlobalResult<SipMessage> {
         let mut response_header = Self::build_response_header(req, socket_addr)?;
-        let other_header = Header::Other(String::from("X-GB-Version"), GB_VERSION.to_string());
+        let other_header = Header::Other(String::from("X-GB-Ver"), GB_VERSION.to_string());
         response_header.push(other_header);
         Ok(rsip::Response {
             status_code: 200.into(),

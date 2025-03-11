@@ -195,33 +195,33 @@ impl GbsDeviceChannel {
     pub async fn insert_gbs_device_channel(
         device_id: &String,
         vs: Vec<(String, String)>,
-    ) -> GlobalResult<()> {
+    ) -> GlobalResult<Vec<GbsDeviceChannel>> {
         let dc_ls = Self::build(device_id, vs);
         let pool = get_conn_by_pool()?;
         let mut builder = sqlx::query_builder::QueryBuilder::new("INSERT INTO gb_device_channel_list (device_id, channel_id, name, manufacturer,
          model, owner, status, civil_code, address, parental, block, parent_id, ip_address, port,password,
          longitude,latitude,ptz_type,supply_light_type,alias_name) ");
-        builder.push_values(dc_ls, |mut b, dc| {
-            b.push_bind(dc.device_id)
-                .push_bind(dc.channel_id)
-                .push_bind(dc.name)
-                .push_bind(dc.manufacturer)
-                .push_bind(dc.model)
-                .push_bind(dc.owner)
-                .push_bind(dc.status)
-                .push_bind(dc.civil_code)
-                .push_bind(dc.address)
+        builder.push_values(&dc_ls, |mut b, dc| {
+            b.push_bind(&dc.device_id)
+                .push_bind(&dc.channel_id)
+                .push_bind(&dc.name)
+                .push_bind(&dc.manufacturer)
+                .push_bind(&dc.model)
+                .push_bind(&dc.owner)
+                .push_bind(&dc.status)
+                .push_bind(&dc.civil_code)
+                .push_bind(&dc.address)
                 .push_bind(dc.parental)
-                .push_bind(dc.block)
-                .push_bind(dc.parent_id)
-                .push_bind(dc.ip_address)
+                .push_bind(&dc.block)
+                .push_bind(&dc.parent_id)
+                .push_bind(&dc.ip_address)
                 .push_bind(dc.port)
-                .push_bind(dc.password)
+                .push_bind(&dc.password)
                 .push_bind(dc.longitude)
                 .push_bind(dc.latitude)
                 .push_bind(dc.ptz_type)
                 .push_bind(dc.supply_light_type)
-                .push_bind(dc.alias_name);
+                .push_bind(&dc.alias_name);
         });
         builder.push(" ON DUPLICATE KEY UPDATE device_id=VALUES(device_id),channel_id=VALUES(channel_id),name=VALUES(name),
         manufacturer=VALUES(manufacturer),model=VALUES(model),owner=VALUES(owner),status=VALUES(status),civil_code=VALUES(civil_code),
@@ -233,7 +233,7 @@ impl GbsDeviceChannel {
             .execute(pool)
             .await
             .hand_log(|msg| error!("{msg}"))?;
-        Ok(())
+        Ok(dc_ls)
     }
     fn build(device_id: &String, vs: Vec<(String, String)>) -> Vec<GbsDeviceChannel> {
         use crate::gb::handler::parser::xml::*;

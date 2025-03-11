@@ -16,7 +16,7 @@ use common::net::state::{Association, Package, Zip};
 use common::tokio::sync::mpsc::Sender;
 
 use crate::gb::handler::builder::ResponseBuilder;
-use crate::gb::handler::{cmd, parser};
+use crate::gb::handler::{cmd::CmdQuery, parser};
 use crate::gb::shared::rw::RWSession;
 use crate::storage::entity::{GbsDevice, GbsDeviceChannel, GbsDeviceExt, GbsOauth};
 use crate::storage::mapper;
@@ -201,9 +201,9 @@ impl Register {
 
         info!("register ok. sent queryDeviceInfo & queryDeviceCatalog.");
         // query subscribe device msg
-        cmd::CmdQuery::lazy_query_device_info(device_id).await?;
-        // cmd::CmdQuery::lazy_subscribe_device_catalog(device_id).await?;
-        cmd::CmdQuery::lazy_query_device_catalog(device_id).await
+        CmdQuery::lazy_query_device_info(device_id).await?;
+        // CmdQuery::lazy_subscribe_device_catalog(device_id).await?;
+        CmdQuery::lazy_query_device_catalog(device_id).await
     }
 
     async fn logout_ok(
@@ -254,7 +254,7 @@ impl Message {
                             }
                             MESSAGE_CONFIG_DOWNLOAD => {}
                             MESSAGE_NOTIFY_CATALOG => {
-                                Self::notify_catalog(device_id, vs).await;
+                                Self::device_catalog(device_id, vs).await;
                             }
                             MESSAGE_DEVICE_INFO => {
                                 Self::device_info(vs).await;
@@ -314,10 +314,16 @@ impl Message {
             .hand_log(|msg| error!("{msg}"));
     }
 
-    async fn notify_catalog(device_id: &String, vs: Vec<(String, String)>) {
-        let _ = GbsDeviceChannel::insert_gbs_device_channel(device_id, vs)
+    async fn device_catalog(device_id: &String, vs: Vec<(String, String)>) {
+        if let Ok(_arr) = GbsDeviceChannel::insert_gbs_device_channel(device_id, vs)
             .await
-            .hand_log(|msg| error!("{msg}"));
+            .hand_log(|msg| error!("{msg}"))
+        {
+            //通过预置位探测是否有云台可用
+            // for dc in arr {
+            //     let _ = CmdQuery::query_preset(&dc.device_id, Some(&dc.channel_id)).await.hand_log(|msg| error!("{msg}"));
+            // }
+        }
     }
 }
 

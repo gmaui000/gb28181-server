@@ -5,27 +5,87 @@ use common::exception::{GlobalError, GlobalResult, TransError};
 use common::log::error;
 use common::serde_json;
 use common::tokio::sync::mpsc;
-use common::tokio::time::Instant;
+use common::tokio::time::{sleep, Instant};
 
-use crate::gb::handler::cmd::CmdStream;
+use crate::gb::handler::cmd::{CmdControl, CmdStream};
 use crate::gb::RWSession;
 use crate::general;
 use crate::general::cache::PlayType;
-use crate::general::model::{
-    MediaAddress, PlayBackModel, PlayLiveModel, PlaySeekModel, PlaySpeedModel, StreamInfo,
-    StreamMode, TimeRange,
-};
-use crate::service::{
-    callback, BaseStreamInfo, StreamPlayInfo, StreamState, EXPIRES, RELOAD_EXPIRES,
-};
+use crate::general::model::*;
+use crate::service::*;
 use crate::utils::id_builder;
 
 const KEY_STREAM_IN: &str = "KEY_STREAM_IN:";
 
-pub fn on_play(stream_play_info: StreamPlayInfo) -> bool {
-    let gbs_token = stream_play_info.get_token();
-    let stream_id = stream_play_info.base_stream_info.get_stream_id();
-    general::cache::Cache::stream_map_contains_token(stream_id, gbs_token)
+pub fn on_publish(_: PublishRequest) -> OnPublishResponse {
+    // true
+    OnPublishResponse {
+        code: 0,
+        msg: "".to_string(),
+        enable_hls: true,
+        enable_hls_fmp4: true,
+        enable_mp4: true,
+        enable_rtsp: true,
+        enable_rtmp: true,
+        enable_ts: true,
+        enable_fmp4: true,
+        hls_demand: false,
+        rtsp_demand: false,
+        rtmp_demand: false,
+        ts_demand: false,
+        fmp4_demand: false,
+        enable_audio: true,
+        add_mute_audio: true,
+        mp4_save_path: "".to_string(),
+        mp4_save_second: 5,
+        mp4_as_player: true,
+        hls_save_path: "".to_string(),
+        modify_stamp: true,
+        continue_push_ms: 0,
+        auto_close: true,
+        stream_replace: "".to_string(),
+    }
+}
+
+pub fn on_play(_: PlayRequest) -> OnPlayResponse {
+    OnPlayResponse {
+        code: 0,
+        msg: "".to_string(),
+    }
+}
+
+pub fn on_player_count_change(_: PlayerCountChangeRequest) -> OnPlayerCountChangeResponse {
+    OnPlayerCountChangeResponse {
+        code: 0,
+        msg: "".to_string(),
+    }
+}
+
+pub fn on_stream_changed(_: StreamChangedRequest) -> OnStreamChangedResponse {
+    OnStreamChangedResponse {
+        code: 0,
+        msg: "".to_string(),
+    }
+}
+
+pub fn on_stream_none_reader(_: StreamNoneReaderRequest) -> OnStreamNoneReaderResponse {
+    OnStreamNoneReaderResponse {
+        code: 0,
+        close: true,
+    }
+}
+
+pub fn on_stream_not_found(_: StreamNotFoundRequest) -> OnStreamNotFoundResponse {
+    OnStreamNotFoundResponse {
+        code: 0,
+        msg: "".to_string(),
+    }
+}
+pub fn on_rtp_server_timeout(_: RtpServerTimeoutRequest) -> OnRtpServerTimeoutResponse {
+    OnRtpServerTimeoutResponse {
+        code: 0,
+        msg: "".to_string(),
+    }
 }
 
 //无人观看则关闭流
@@ -33,7 +93,7 @@ pub async fn stream_idle(base_stream_info: BaseStreamInfo) -> bool {
     let stream_id = base_stream_info.get_stream_id();
     let cst_info = general::cache::Cache::stream_map_build_call_id_seq_from_to_tag(stream_id);
 
-    let (device_id, channel_id, ssrc_str) = id_builder::de_stream_id(stream_id);
+    let (device_id, channel_id, ssrc) = id_builder::de_stream_id(stream_id);
     if let Some((call_id, seq, from_tag, to_tag)) = cst_info {
         let _ =
             CmdStream::play_bye(seq, call_id, &device_id, &channel_id, &from_tag, &to_tag).await;
@@ -43,7 +103,7 @@ pub async fn stream_idle(base_stream_info: BaseStreamInfo) -> bool {
     {
         general::cache::Cache::device_map_remove(
             &device_id,
-            Some((&channel_id, Some((play_type, &ssrc_str)))),
+            Some((&channel_id, Some((play_type, &ssrc)))),
         );
         general::cache::Cache::stream_map_remove(stream_id, None);
     }
@@ -196,6 +256,16 @@ pub async fn speed(speed_mode: PlaySpeedModel, _token: String) -> GlobalResult<b
         call_id,
     )
     .await?;
+    Ok(true)
+}
+
+pub async fn ptz(ptz_control_model: PtzControlModel, _token: String) -> GlobalResult<bool> {
+    CmdControl::control_ptz(&ptz_control_model).await?;
+    let mut model = PtzControlModel::default();
+    model.set_device_id(ptz_control_model.get_device_id());
+    sleep(Duration::from_millis(1000)).await;
+    model.set_channel_id(ptz_control_model.get_channel_id());
+    CmdControl::control_ptz(&model).await?;
     Ok(true)
 }
 

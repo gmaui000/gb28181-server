@@ -13,7 +13,7 @@ quick-xml = { version = "0.37", features = ["encoding_rs", "encoding"] }
 encoding_rs = "0.8"
 poem = "3.1"
 poem-openapi = { version = "5.1", features = ["swagger-ui"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12.12", features = ["json"] }
 sdp-types = "0.1"
 regex = "1.11"
 image = "0.25"

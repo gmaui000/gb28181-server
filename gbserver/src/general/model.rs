@@ -3,7 +3,7 @@ use poem_openapi::types::{ParseFromJSON, ToJSON, Type};
 use poem_openapi::{self, Object};
 
 use common::anyhow::anyhow;
-use common::constructor::Get;
+use common::constructor::{Get, Set};
 use common::exception::GlobalError::SysErr;
 use common::exception::GlobalResult;
 
@@ -142,6 +142,34 @@ pub struct PlaySpeedModel {
     stream_id: String,
     #[oai(validator(maximum(value = "8"), minimum(value = "0.25")))]
     speed_rate: f32,
+}
+
+#[derive(Object, Debug, Deserialize, Serialize, Default, Set, Get)]
+#[serde(crate = "common::serde")]
+#[allow(non_snake_case)]
+pub struct PtzControlModel {
+    #[oai(validator(min_length = "20", max_length = "20"))]
+    device_id: String,
+    #[oai(validator(min_length = "20", max_length = "20"))]
+    channel_id: String,
+    #[oai(validator(maximum(value = "2"), minimum(value = "0")))]
+    ///镜头左移右移 0:停止 1:左移 2:右移
+    left_right: u8,
+    #[oai(validator(maximum(value = "2"), minimum(value = "0")))]
+    ///镜头上移下移 0:停止 1:上移 2:下移
+    up_down: u8,
+    #[oai(validator(maximum(value = "2"), minimum(value = "0")))]
+    ///镜头放大缩小 0:停止 1:缩小 2:放大
+    in_out: u8,
+    #[oai(validator(maximum(value = "255"), minimum(value = "0")))]
+    ///水平移动速度：1-255
+    horizon_speed: u8,
+    #[oai(validator(maximum(value = "255"), minimum(value = "0")))]
+    ///垂直移动速度：0-255
+    vertical_speed: u8,
+    #[oai(validator(maximum(value = "15"), minimum(value = "0")))]
+    ///焦距缩放速度：0-15
+    zoom_speed: u8,
 }
 
 #[derive(Debug, Deserialize, Object, Serialize)]

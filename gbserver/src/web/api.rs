@@ -5,9 +5,7 @@ use poem_openapi::OpenApi;
 
 use common::exception::GlobalError;
 
-use crate::general::model::{
-    PlayBackModel, PlayLiveModel, PlaySeekModel, PlaySpeedModel, ResultMessageData, StreamInfo,
-};
+use crate::general::model::*;
 use crate::service::handler;
 
 pub struct RestApi;
@@ -97,6 +95,27 @@ impl RestApi {
         match handler::speed(speed_model, header).await {
             Err(err) => {
                 let err_msg = format!("倍速播放失败；{}", err);
+                error!("{}", &err_msg);
+                Json(ResultMessageData::build_failure_msg(err_msg))
+            }
+            Ok(_) => Json(ResultMessageData::build_success(true)),
+        }
+    }
+
+    #[allow(non_snake_case)]
+    #[oai(path = "/control/ptz", method = "post")]
+    /// 云台控制
+    async fn control_ptz(
+        &self,
+        ptz: Json<PtzControlModel>,
+        #[oai(name = "gmv-token")] token: Header<String>,
+    ) -> Json<ResultMessageData<bool>> {
+        let header = token.0;
+        let ptz_model = ptz.0;
+        info!("control_ptz:header = {:?},body = {:?}", &header, &ptz_model);
+        match handler::ptz(ptz_model, header).await {
+            Err(err) => {
+                let err_msg = format!("云台控制失败；{}", err);
                 error!("{}", &err_msg);
                 Json(ResultMessageData::build_failure_msg(err_msg))
             }

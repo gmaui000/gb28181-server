@@ -150,7 +150,7 @@ pub fn de_stream_id(stream_id: &str) -> (String, String, String) {
 pub async fn build_ssrc_stream_id(
     device_id: &String,
     channel_id: &String,
-    num_ssrc: u16,
+    ssrc: u16,
     live: bool,
 ) -> GlobalResult<(String, String)> {
     let gbs_oauth = GbsOauth::read_gbs_oauth_by_device_id(device_id)
@@ -178,7 +178,7 @@ pub async fn build_ssrc_stream_id(
     }
     let domain_id = gbs_oauth.get_domain_id();
     let middle_domain_mark = &domain_id[4..=8];
-    let ssrc = format!("{front_live_or_back}{middle_domain_mark}{num_ssrc:04}");
+    let ssrc = format!("{front_live_or_back}{middle_domain_mark}{ssrc:04}");
     let stream_id = en_stream_id(device_id, channel_id, &ssrc);
     Ok((ssrc, stream_id))
 }

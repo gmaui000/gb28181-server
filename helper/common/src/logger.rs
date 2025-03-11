@@ -1,13 +1,11 @@
-use std::path::PathBuf;
-
+use crate::serde_default;
 use chrono::Local;
+use confgen::conf;
+use exception::{GlobalResult, TransError};
 use fern::Dispatch;
 use log::{error, LevelFilter};
 use serde::{Deserialize, Deserializer};
-
-use crate::serde_default;
-use confgen::conf;
-use exception::{GlobalResult, TransError};
+use std::path::PathBuf;
 
 /// 通过配置文件控制日志格式化输出
 /// # Examples

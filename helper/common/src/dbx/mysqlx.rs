@@ -1,18 +1,15 @@
-use std::time::Duration;
-
+use crate::utils::crypto::default_decrypt;
+use crate::{logger, serde_default};
 use confgen::conf;
+use exception::{GlobalError, GlobalResult};
 use log::{error, LevelFilter};
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 use sqlx::mysql::MySqlSslMode;
 use sqlx::pool::PoolOptions;
 use sqlx::{ConnectOptions, Connection, MySql, Pool};
+use std::time::Duration;
 
-use exception::{GlobalError, GlobalResult};
-
-use crate as common;
-use crate::utils::crypto::default_decrypt;
-use crate::{logger, serde_default};
 /*
 Rust type	MySQL/MariaDB type(s)
 bool	TINYINT(1), BOOLEAN, BOOL (see below)
@@ -58,7 +55,7 @@ pub fn get_conn_by_pool() -> GlobalResult<&'static Pool<MySql>> {
 }
 
 #[derive(Debug, Deserialize)]
-#[conf(prefix = "db.mysql")]
+#[conf(prefix = "db.mysql", lib)]
 struct DbModel {
     host_or_ip: String,
     port: u16,

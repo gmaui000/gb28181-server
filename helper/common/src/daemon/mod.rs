@@ -1,12 +1,10 @@
+use daemonize::{Daemonize, Outcome};
+use exception::GlobalResult;
 use std::fs::File;
 use std::io::Read;
 use std::process::{exit, Command};
 use std::time::Duration;
 use std::{env, thread};
-
-use daemonize::{Daemonize, Outcome};
-
-use exception::GlobalResult;
 
 pub trait Daemon<T> {
     fn init_privilege() -> GlobalResult<(Self, T)>

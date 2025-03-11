@@ -1,11 +1,11 @@
-use log::error;
-use std::net::SocketAddr;
-
-use tokio::sync::mpsc::{Receiver, Sender};
-
 use crate::exception::{GlobalResult, TransError};
 use crate::net::state::Zip;
-
+use log::error;
+use std::net::SocketAddr;
+use tokio::sync::{
+    mpsc::{channel, Receiver, Sender},
+    oneshot,
+};
 mod core;
 pub mod sdx;
 pub mod state;
@@ -24,9 +24,9 @@ async fn net_run(
     protocol: state::Protocol,
     socket_addr: SocketAddr,
 ) -> GlobalResult<(Sender<Zip>, Receiver<Zip>)> {
-    let (listen_tx, listen_rx) = tokio::sync::oneshot::channel();
+    let (listen_tx, listen_rx) = oneshot::channel();
     let rw = core::listen(protocol, socket_addr, listen_tx).await?;
-    let (accept_tx, accept_rx) = tokio::sync::mpsc::channel(state::CHANNEL_BUFFER_SIZE);
+    let (accept_tx, accept_rx) = channel(state::CHANNEL_BUFFER_SIZE);
     let _ = core::accept(listen_rx, accept_tx)
         .await
         .hand_log(|msg| error!("{msg}"));

@@ -1,17 +1,15 @@
-use std::net::SocketAddr;
-use std::sync::Arc;
 use bytes::Bytes;
+use constructor::{Get, New, Set};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
+use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream, UdpSocket};
-use tokio::sync::mpsc::{Sender, Receiver};
-use constructor::{Get, New, Set};
-
+use tokio::sync::mpsc::{Receiver, Sender};
 
 //TCP连接有状态，需要持有每个连接的句柄
-pub static TCP_HANDLE_MAP: Lazy<Arc<DashMap<Association, Sender<Zip>>>> = Lazy::new(|| {
-    Arc::new(DashMap::new())
-});
+pub static TCP_HANDLE_MAP: Lazy<Arc<DashMap<Association, Sender<Zip>>>> =
+    Lazy::new(|| Arc::new(DashMap::new()));
 pub const SOCKET_BUFFER_SIZE: usize = 4096;
 pub const CHANNEL_BUFFER_SIZE: usize = 10000;
 pub const UDP: &str = "UDP";
@@ -35,9 +33,9 @@ pub enum Protocol {
 impl Protocol {
     pub fn get_value(&self) -> &str {
         match self {
-            Protocol::UDP => { UDP }
-            Protocol::TCP => { TCP }
-            Protocol::ALL => { ALL }
+            Protocol::UDP => UDP,
+            Protocol::TCP => TCP,
+            Protocol::ALL => ALL,
         }
     }
 }
@@ -70,15 +68,21 @@ impl Zip {
 
     pub fn get_association(&self) -> Association {
         match &self {
-            Zip::Data(Package { association, .. }) => { association.clone() }
-            Zip::Event(Event { association, .. }) => { association.clone() }
+            Zip::Data(Package { association, .. }) => association.clone(),
+            Zip::Event(Event { association, .. }) => association.clone(),
         }
     }
 
     pub fn get_association_protocol(&self) -> &Protocol {
         match self {
-            Zip::Data(Package { association: Association { protocol, .. }, .. }) => { protocol }
-            Zip::Event(Event { association: Association { protocol, .. }, .. }) => { protocol }
+            Zip::Data(Package {
+                association: Association { protocol, .. },
+                ..
+            }) => protocol,
+            Zip::Event(Event {
+                association: Association { protocol, .. },
+                ..
+            }) => protocol,
         }
     }
 }

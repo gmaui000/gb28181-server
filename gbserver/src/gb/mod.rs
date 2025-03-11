@@ -1,7 +1,7 @@
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, UdpSocket};
 use std::str::FromStr;
 
-use common::cfg_lib::conf;
+use common::confgen::conf;
 use common::constructor::Get;
 use common::serde::Deserialize;
 use common::tokio::sync::mpsc;

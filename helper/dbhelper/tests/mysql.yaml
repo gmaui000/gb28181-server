@@ -4,7 +4,7 @@ db:
   mysql:
     host_or_ip: 192.168.31.164
     port: 33061
-    db_name: gbs
+    db_name: gbserver
     user: admin_user
     pass: cXRTSVZyeGtBOGZjQmxlTCuVUQUxW7KD+F9lr1q2bUA= #密码的密文
     attrs:

@@ -1,5 +1,5 @@
 use crate::web;
-use common::cfg_lib::conf;
+use common::confgen::conf;
 use common::exception::{GlobalResult, TransError};
 use common::log::{error, info};
 use common::serde::Deserialize;

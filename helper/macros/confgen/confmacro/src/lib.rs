@@ -18,7 +18,7 @@ use syn::DeriveInput;
 /// prefix: 指定字段数据 默认无;
 /// data_type: 文件类型 默认yaml,暂仅支持yaml;
 /// lib 指定yml与cfg_lib库。默认使用common
-///check 初始化struct时，默认None,不校验。some(true)开启自定义字段检查；需手动实现trait cfg_lib::CheckFromConf
+///check 初始化struct时，默认None,不校验。some(true)开启自定义字段检查；需手动实现trait confgen::CheckFromConf
 #[proc_macro_attribute]
 pub fn conf(attrs: TokenStream, item: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(item).expect("syn parse item failed");
@@ -59,7 +59,7 @@ fn build_register_constructor(attr: &ConAttr, struct_name: &Ident) -> proc_macro
         None => quote! {
                 #[common::ctor::ctor]
                 fn #reg_ins() {
-                   common::cfg_lib::conf::register_function(std::any::type_name::<#struct_name>(), || { #check });
+                   common::confgen::conf::register_function(std::any::type_name::<#struct_name>(), || { #check });
                 }
         },
         Some(lib) if !lib.is_empty() => {
@@ -67,7 +67,7 @@ fn build_register_constructor(attr: &ConAttr, struct_name: &Ident) -> proc_macro
             quote! {
                 #[#lib_path::ctor::ctor]
                 fn #reg_ins() {
-                   #lib_path::cfg_lib::conf::register_function(std::any::type_name::<#struct_name>(), || { #check });
+                   #lib_path::confgen::conf::register_function(std::any::type_name::<#struct_name>(), || { #check });
                 }
             }
         }
@@ -76,7 +76,7 @@ fn build_register_constructor(attr: &ConAttr, struct_name: &Ident) -> proc_macro
                 quote! {
                     #[ctor::ctor]
                     fn #reg_ins() {
-                        cfg_lib::conf::register_function(std::any::type_name::<#struct_name>(), || #check);
+                        confgen::conf::register_function(std::any::type_name::<#struct_name>(), || #check);
                     }
                 }
             }
@@ -84,7 +84,7 @@ fn build_register_constructor(attr: &ConAttr, struct_name: &Ident) -> proc_macro
                 quote! {
                     #[ctor::ctor]
                     fn #reg_ins(){
-                        let res:Result<(), cfg_lib::conf::FieldCheckError> = #check;
+                        let res:Result<(), confgen::conf::FieldCheckError> = #check;
                         res.expect("实例化配置文件失败");
                     }
                 }
@@ -102,7 +102,7 @@ fn build_conf_constructor(attr: ConAttr) -> proc_macro2::TokenStream {
     match attr.lib {
         None => {
             fn_body_use_lib = quote! {
-                use common::cfg_lib;
+                use common::confgen;
                 use common::serde_yaml;
             };
         }
@@ -110,7 +110,7 @@ fn build_conf_constructor(attr: ConAttr) -> proc_macro2::TokenStream {
             if !lib.is_empty() {
                 let lib_path: syn::Path = syn::parse_str(&lib).expect("解析库路径失败");
                 fn_body_use_lib = quote! {
-                    use #lib_path::cfg_lib;
+                    use #lib_path::confgen;
                     use #lib_path::serde_yaml;
                 };
             } else {
@@ -122,7 +122,7 @@ fn build_conf_constructor(attr: ConAttr) -> proc_macro2::TokenStream {
     match attr.path {
         None => {
             fn_body_path = quote! {
-                let yaml_content = cfg_lib::conf::get_config();
+                let yaml_content = confgen::conf::get_config();
                 let yaml_value: serde_yaml::Value = serde_yaml::from_str(&yaml_content)
                     .expect("Failed to parse YAML content");
             };

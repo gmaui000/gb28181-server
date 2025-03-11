@@ -315,7 +315,7 @@ impl GbsDeviceChannel {
 #[allow(dead_code, unused_imports)]
 mod tests {
     use super::*;
-    use common::cfg_lib::conf::init_cfg;
+    use common::confgen::conf::init_confgen;
     use common::dbx::mysqlx;
     use common::tokio;
 
@@ -430,7 +430,7 @@ mod tests {
     }
 
     fn init() {
-        init_cfg("config.yml".to_string());
+        init_confgen("config.yml".to_string());
         let _ = mysqlx::init_conn_pool();
     }
 }

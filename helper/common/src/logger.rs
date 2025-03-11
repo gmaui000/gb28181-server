@@ -6,7 +6,7 @@ use log::{error, LevelFilter};
 use serde::{Deserialize, Deserializer};
 
 use crate::serde_default;
-use cfg_lib::conf;
+use confgen::conf;
 use exception::{GlobalResult, TransError};
 
 /// 通过配置文件控制日志格式化输出

@@ -1,9 +1,8 @@
 #[allow(dead_code, unused_imports)]
 mod test1 {
+    use confgen::conf::{init_confgen, CheckFromConf, FieldCheckError};
+    use confmacro::conf;
     use serde::Deserialize;
-    use cfg_lib::conf::{CheckFromConf, FieldCheckError, init_cfg};
-    use cfg_macro::conf;
-
 
     #[derive(Debug, Deserialize)]
     #[conf(lib)]
@@ -15,7 +14,7 @@ mod test1 {
 
     #[test]
     fn test_default_conf1() {
-        init_cfg("tests/cfg1.yaml".to_string());
+        init_confgen("tests/cfg1.yaml".to_string());
         let conf = Cfg1::conf();
         println!("{:?}", conf);
     }

@@ -32,7 +32,7 @@ pub async fn get_device_status_info(
 #[allow(dead_code, unused_imports)]
 mod test {
     use super::*;
-    use common::cfg_lib::conf::init_cfg;
+    use common::confgen::conf::init_confgen;
     use common::dbx::mysqlx;
     use common::tokio;
 
@@ -55,7 +55,7 @@ mod test {
     }
 
     fn init() {
-        init_cfg("config.yml".to_string());
+        init_confgen("config.yml".to_string());
         let _ = mysqlx::init_conn_pool();
     }
 }

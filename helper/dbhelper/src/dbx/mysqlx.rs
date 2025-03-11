@@ -7,7 +7,7 @@ use sqlx::mysql::MySqlSslMode;
 use sqlx::pool::PoolOptions;
 use sqlx::{ConnectOptions, Connection, MySql, Pool};
 
-use common::cfg_lib::conf;
+use common::confgen::conf;
 use common::exception::{GlobalError, GlobalResult};
 
 use common::utils::crypto::default_decrypt;

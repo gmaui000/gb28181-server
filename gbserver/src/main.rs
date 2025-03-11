@@ -12,7 +12,7 @@ mod web;
 
 fn main() {
     let config_path = "config.yml";
-    common::cfg_lib::conf::init_cfg(config_path.to_string());
+    common::confgen::conf::init_confgen(config_path.to_string());
 
     // daemon::run::<AppInfo, _>();
     if let Ok((appinfo, (http_listener, (tcp_listener, udp_socket)))) = AppInfo::init_privilege() {

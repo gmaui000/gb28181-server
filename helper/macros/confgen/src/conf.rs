@@ -46,7 +46,7 @@ pub fn get_config() -> Arc<String> {
         .clone()
 }
 
-pub fn init_cfg(path: String) {
+pub fn init_confgen(path: String) {
     let mut file = File::open(path).expect("not found config file to open");
     let mut conf = String::new();
     file.read_to_string(&mut conf)

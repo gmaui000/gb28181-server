@@ -1,14 +1,14 @@
-use std::collections::HashMap;
-use std::net::Ipv4Addr;
-use common::serde_default;
-use common::cfg_lib::conf;
+use common::confgen::conf;
 use common::constructor::Get;
 use common::once_cell::sync::OnceCell;
 use common::serde::Deserialize;
+use common::serde_default;
+use std::collections::HashMap;
+use std::net::Ipv4Addr;
 
-pub mod model;
 pub mod cache;
 pub mod http;
+pub mod model;
 
 #[derive(Debug, Get, Deserialize)]
 #[serde(crate = "common::serde")]
@@ -32,13 +32,15 @@ pub struct StreamNode {
 }
 static CELL: OnceCell<StreamConf> = OnceCell::new();
 impl StreamConf {
-
     pub fn get_stream_conf() -> &'static Self {
-        CELL.get_or_init(||{
+        CELL.get_or_init(|| {
             let mut conf: Self = StreamConf::conf();
             for node in &conf.nodes {
                 if let Some(old) = conf.node_map.insert(node.name.clone(), node.clone()) {
-                    panic!("配置server.stream.nodes.name重复:{}:，建议使用s1,s2,s3等连续编号", old.name);
+                    panic!(
+                        "配置server.stream.nodes.name重复:{}:，建议使用s1,s2,s3等连续编号",
+                        old.name
+                    );
                 }
             }
             if conf.node_map.is_empty() {
@@ -48,7 +50,6 @@ impl StreamConf {
         })
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -60,27 +61,9 @@ mod tests {
 
     fn print_banner(c: char) {
         let binary = match c {
-            'G' => [
-                0b11111,
-                0b10000,
-                0b10011,
-                0b10001,
-                0b11111,
-            ],
-            'M' => [
-                0b10001,
-                0b11011,
-                0b10101,
-                0b10001,
-                0b10001,
-            ],
-            'V' => [
-                0b10001,
-                0b10001,
-                0b01010,
-                0b00100,
-                0b00100,
-            ],
+            'G' => [0b11111, 0b10000, 0b10011, 0b10001, 0b11111],
+            'M' => [0b10001, 0b11011, 0b10101, 0b10001, 0b10001],
+            'V' => [0b10001, 0b10001, 0b01010, 0b00100, 0b00100],
             _ => [0; 5],
         };
 

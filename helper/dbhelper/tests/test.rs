@@ -1,6 +1,6 @@
 #[allow(dead_code, unused_imports)]
 mod test {
-    use common::cfg_lib::conf;
+    use common::confgen::conf;
     use dbhelper::{dbx::mysqlx, sqlx};
     use sqlx::query_builder::QueryBuilder;
     use sqlx::ConnectOptions;
@@ -8,7 +8,7 @@ mod test {
 
     #[tokio::test]
     async fn test_mysqlx() {
-        conf::init_cfg("tests/mysql.yaml".to_string());
+        conf::init_confgen("tests/mysql.yaml".to_string());
         mysqlx::init_conn_pool().unwrap();
         let pool = mysqlx::get_conn_by_pool().unwrap();
         let mut create_table_builder = QueryBuilder::new(

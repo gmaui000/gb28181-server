@@ -4,7 +4,7 @@ members = [
     "helper/common",
     "helper/dbhelper",
     "helper/exception",
-    "helper/macros/cfg_lib",
+    "helper/macros/confgen",
     "helper/macros/constructor",
     "gbserver",
 ]

@@ -248,6 +248,7 @@ fn build_unnamed_get_constructor(
     constructor_name: Ident,
 ) -> proc_macro2::TokenStream {
     let constructor = quote! {
+        #[allow(non_snake_case)]
         pub fn #constructor_name(&self) ->&#field_type{
             &self.#index
         }
@@ -261,6 +262,7 @@ fn build_named_get_constructor(
     constructor_name: Ident,
 ) -> proc_macro2::TokenStream {
     let constructor = quote! {
+        #[allow(non_snake_case)]
         pub fn #constructor_name(&self) -> &#field_type{
             &self.#field_name
         }
@@ -275,6 +277,7 @@ fn build_unnamed_set_constructor(
 ) -> proc_macro2::TokenStream {
     let param_name = format_ident!("field_{}", index);
     let constructor = quote! {
+        #[allow(non_snake_case)]
         pub fn #constructor_name(&mut self,#param_name:impl Into<#field_type>) {
             self.#index = #param_name.into();
         }
@@ -288,6 +291,7 @@ fn build_named_set_constructor(
     constructor_name: Ident,
 ) -> proc_macro2::TokenStream {
     let constructor = quote! {
+        #[allow(non_snake_case)]
         pub fn #constructor_name(&mut self,#field_name:impl Into<#field_type>) {
             self.#field_name = #field_name.into();
         }

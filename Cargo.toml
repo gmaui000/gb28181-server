@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "helper/common",
-    "helper/dbhelper",
     "helper/exception",
     "helper/macros/confgen",
     "helper/macros/constructor",

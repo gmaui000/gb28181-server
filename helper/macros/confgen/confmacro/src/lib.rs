@@ -17,7 +17,7 @@ use syn::DeriveInput;
 /// path:指定文件 默认读取配置文件;
 /// prefix: 指定字段数据 默认无;
 /// data_type: 文件类型 默认yaml,暂仅支持yaml;
-/// lib 指定yml与cfg_lib库。默认使用common
+/// lib 指定yml与confgen库。默认使用common
 ///check 初始化struct时，默认None,不校验。some(true)开启自定义字段检查；需手动实现trait confgen::CheckFromConf
 #[proc_macro_attribute]
 pub fn conf(attrs: TokenStream, item: TokenStream) -> TokenStream {

@@ -64,7 +64,7 @@ impl RestApi {
     async fn playback_seek(
         &self,
         seek: Json<PlaySeekModel>,
-        #[oai(name = "gmv-token")] token: Header<String>,
+        #[oai(name = "gbs-token")] token: Header<String>,
     ) -> Json<ResultMessageData<bool>> {
         let header = token.0;
         let seek_model = seek.0;
@@ -84,7 +84,7 @@ impl RestApi {
     async fn playback_speed(
         &self,
         speed: Json<PlaySpeedModel>,
-        #[oai(name = "gmv-token")] token: Header<String>,
+        #[oai(name = "gbs-token")] token: Header<String>,
     ) -> Json<ResultMessageData<bool>> {
         let header = token.0;
         let speed_model = speed.0;
@@ -108,7 +108,7 @@ impl RestApi {
     async fn control_ptz(
         &self,
         ptz: Json<PtzControlModel>,
-        #[oai(name = "gmv-token")] token: Header<String>,
+        #[oai(name = "gbs-token")] token: Header<String>,
     ) -> Json<ResultMessageData<bool>> {
         let header = token.0;
         let ptz_model = ptz.0;

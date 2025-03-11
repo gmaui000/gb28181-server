@@ -1,7 +1,7 @@
 #[allow(dead_code, unused_imports)]
 mod test {
-    use common::confgen::conf;
-    use dbhelper::{dbx::mysqlx, sqlx};
+    use common::dbx::mysqlx;
+    use confgen::conf;
     use sqlx::query_builder::QueryBuilder;
     use sqlx::ConnectOptions;
     use sqlx::Row;

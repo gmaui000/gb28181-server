@@ -13,7 +13,7 @@ use crate::general;
 use crate::general::cache::PlayType;
 use crate::general::model::*;
 use crate::service::*;
-use crate::utils::id_builder;
+use crate::utils::idgen;
 
 const KEY_STREAM_IN: &str = "KEY_STREAM_IN:";
 
@@ -93,7 +93,7 @@ pub async fn stream_idle(base_stream_info: BaseStreamInfo) -> bool {
     let stream_id = base_stream_info.get_stream_id();
     let cst_info = general::cache::Cache::stream_map_build_call_id_seq_from_to_tag(stream_id);
 
-    let (device_id, channel_id, ssrc) = id_builder::de_stream_id(stream_id);
+    let (device_id, channel_id, ssrc) = idgen::de_stream_id(stream_id);
     if let Some((call_id, seq, from_tag, to_tag)) = cst_info {
         let _ =
             CmdStream::play_bye(seq, call_id, &device_id, &channel_id, &from_tag, &to_tag).await;
@@ -139,7 +139,7 @@ pub fn stream_input_timeout(stream_state: StreamState) {
         general::cache::Cache::stream_map_query_play_type_by_stream_id(stream_id)
     {
         general::cache::Cache::stream_map_remove(stream_id, None);
-        let (device_id, channel_id, ssrc) = id_builder::de_stream_id(stream_id);
+        let (device_id, channel_id, ssrc) = idgen::de_stream_id(stream_id);
         general::cache::Cache::device_map_remove(
             &device_id,
             Some((&channel_id, Some((play_type, &ssrc)))),
@@ -220,7 +220,7 @@ pub async fn play_back(play_back_model: PlayBackModel, token: String) -> GlobalR
 }
 
 pub async fn seek(seek_mode: PlaySeekModel, _token: String) -> GlobalResult<bool> {
-    let (device_id, channel_id, _ssrc) = id_builder::de_stream_id(seek_mode.get_stream_id());
+    let (device_id, channel_id, _ssrc) = idgen::de_stream_id(seek_mode.get_stream_id());
     let (call_id, seq, from_tag, to_tag) =
         general::cache::Cache::stream_map_build_call_id_seq_from_to_tag(seek_mode.get_stream_id())
             .ok_or_else(|| {
@@ -240,7 +240,7 @@ pub async fn seek(seek_mode: PlaySeekModel, _token: String) -> GlobalResult<bool
 }
 
 pub async fn speed(speed_mode: PlaySpeedModel, _token: String) -> GlobalResult<bool> {
-    let (device_id, channel_id, _ssrc) = id_builder::de_stream_id(speed_mode.get_stream_id());
+    let (device_id, channel_id, _ssrc) = idgen::de_stream_id(speed_mode.get_stream_id());
     let (call_id, seq, from_tag, to_tag) =
         general::cache::Cache::stream_map_build_call_id_seq_from_to_tag(speed_mode.get_stream_id())
             .ok_or_else(|| {
@@ -286,7 +286,7 @@ async fn start_invite_stream(
     })?;
     let mut node_sets = general::cache::Cache::stream_map_order_node();
     let (ssrc, stream_id) =
-        id_builder::build_ssrc_stream_id(device_id, channel_id, num_ssrc, true).await?;
+        idgen::build_ssrc_stream_id(device_id, channel_id, num_ssrc, true).await?;
     let conf = general::StreamConf::get_stream_conf();
     //TODO: 选择负载最小的节点开始尝试：节点是否可用;
     if let Some((_, node_name)) = node_sets.pop_first() {

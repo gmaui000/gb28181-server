@@ -11,8 +11,7 @@ use common::exception::GlobalError::SysErr;
 use common::exception::{GlobalResult, TransError};
 use common::log::error;
 use common::log::warn;
-use common::rand::prelude::StdRng;
-use common::rand::{thread_rng, Rng, SeedableRng};
+use common::rand::{rng, Rng};
 use rsip::headers::typed;
 use rsip::message::HeadersExt;
 use rsip::param::{OtherParam, OtherParamValue};
@@ -157,13 +156,17 @@ impl ResponseBuilder {
                 .clone()
                 .into(),
         );
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let to = req
             .to_header()
             .hand_log(|msg| warn!("{msg}"))?
             .typed()
             .hand_log(|msg| warn!("{msg}"))?;
-        let to = to.with_tag(rng.gen_range(123456789u32..987654321u32).to_string().into());
+        let to = to.with_tag(
+            rng.random_range(123456789u32..987654321u32)
+                .to_string()
+                .into(),
+        );
         headers.push(to.into());
         headers.push(
             req.call_id_header()
@@ -246,8 +249,8 @@ impl RequestBuilder {
             Self::build_request_header(channel_id_opt, device_id, false, false, None, None).await?;
         let call_id_str = Uuid::new_v4().as_simple().to_string();
         headers.push(rsip::headers::CallId::new(&call_id_str).into());
-        let mut rng = thread_rng();
-        let cs_eq_str = format!("{} MESSAGE", rng.gen_range(12u8..255u8));
+        let mut rng = rng();
+        let cs_eq_str = format!("{} MESSAGE", rng.random_range(12u8..255u8));
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
         headers.push(cs_eq);
         headers.push(rsip::headers::ContentType::new("APPLICATION/MANSCDP+xml").into());
@@ -272,14 +275,14 @@ impl RequestBuilder {
             Self::build_request_header(None, device_id, true, true, None, None).await?;
         let call_id_str = Uuid::new_v4().as_simple().to_string();
         headers.push(rsip::headers::CallId::new(&call_id_str).into());
-        let mut rng = thread_rng();
-        let cs_eq_str = format!("{} SUBSCRIBE", rng.gen_range(12u8..255u8));
+        let mut rng = rng();
+        let cs_eq_str = format!("{} SUBSCRIBE", rng.random_range(12u8..255u8));
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
         headers.push(cs_eq);
         headers.push(
             rsip::headers::Event::new(format!(
                 "Catalog;id={}",
-                rng.gen_range(123456789u32..987654321u32)
+                rng.random_range(123456789u32..987654321u32)
             ))
             .into(),
         );
@@ -318,8 +321,8 @@ impl RequestBuilder {
         let call_id = call_id.unwrap_or_else(|| Uuid::new_v4().as_simple().to_string());
         headers.push(rsip::headers::CallId::new(&call_id).into());
         let seq = seq.unwrap_or_else(|| {
-            let mut rng = thread_rng();
-            rng.gen_range(12u32..255u32)
+            let mut rng = rng();
+            rng.random_range(12u32..255u32)
         });
         let cs_eq_str = format!("{} INFO", seq);
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
@@ -384,7 +387,7 @@ impl RequestBuilder {
         let transport = bill.get_protocol().get_value();
         let uri_str = format!("sip:{}@{}", dst_id, domain);
         let uri = uri::Uri::try_from(uri_str).hand_log(|msg| warn!("{msg}"))?;
-        let mut rng = StdRng::from_entropy();
+        let mut rng = rng();
         let mut headers: rsip::Headers = Default::default();
         headers.push(
             rsip::headers::Via::new(format!(
@@ -392,7 +395,7 @@ impl RequestBuilder {
                 transport,
                 server_ip,
                 server_port,
-                rng.gen_range(123456789u32..987654321u32)
+                rng.random_range(123456789u32..987654321u32)
             ))
             .into(),
         );
@@ -401,7 +404,7 @@ impl RequestBuilder {
                 "<sip:{}@{}>;tag={}",
                 domain_id,
                 domain,
-                from_tag.unwrap_or(&rng.gen_range(123456789u32..987654321u32).to_string())
+                from_tag.unwrap_or(&rng.random_range(123456789u32..987654321u32).to_string())
             ))
             .into(),
         );
@@ -609,8 +612,8 @@ impl RequestBuilder {
                 .await?;
         let call_id_str = Uuid::new_v4().as_simple().to_string();
         headers.push(rsip::headers::CallId::new(&call_id_str).into());
-        let mut rng = thread_rng();
-        let cs_eq_str = format!("{} INVITE", rng.gen_range(12u8..255u8));
+        let mut rng = rng();
+        let cs_eq_str = format!("{} INVITE", rng.random_range(12u8..255u8));
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
         headers.push(cs_eq);
 
@@ -656,7 +659,7 @@ impl RequestBuilder {
                 .clone()
                 .into(),
         );
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let via: typed::Via = res
             .via_header()
             .hand_log(|msg| warn!("{msg}"))?
@@ -667,7 +670,7 @@ impl RequestBuilder {
                 "SIP/2.0/{} {};rport;branch=z9hG4bK{}",
                 via.transport,
                 via.uri,
-                rng.gen_range(123456789u32..987654321u32)
+                rng.random_range(123456789u32..987654321u32)
             ))
             .into(),
         );

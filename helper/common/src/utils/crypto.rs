@@ -1,9 +1,10 @@
 use aes::Aes256;
+use base64::{engine::general_purpose, Engine as _};
 use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
 use exception::{GlobalResult, TransError};
 use log::error;
-use rand::seq::SliceRandom;
+use rand::seq::IteratorRandom;
 
 type AesCbc = Cbc<Aes256, Pkcs7>;
 
@@ -11,13 +12,13 @@ const BASE_STR: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123
 const DEFAULT_KEY: &str = "1234567890All in Rust 1234567890"; //32长度
 
 fn gen_ascii_chars(size: usize) -> GlobalResult<String> {
-    let mut rng = &mut rand::thread_rng();
+    let mut rng = rand::rng(); // 不再需要 `&mut`
     let string = String::from_utf8(
         BASE_STR
             .as_bytes()
-            .choose_multiple(&mut rng, size)
-            .cloned()
-            .collect(),
+            .iter()
+            .copied() // 直接拷贝字节，代替 `cloned()`
+            .choose_multiple(&mut rng, size), // `sample_iter()` 适用于 0.9
     )
     .hand_log(|err| error!("{err}"))?;
     Ok(string)
@@ -30,11 +31,13 @@ fn encrypt(key: &str, data: &str) -> GlobalResult<String> {
     let ciphertext = cipher.encrypt_vec(data.as_bytes());
     let mut buffer = bytebuffer::ByteBuffer::from_bytes(iv);
     buffer.write_bytes(&ciphertext);
-    Ok(base64::encode(buffer.to_bytes()))
+    Ok(general_purpose::STANDARD.encode(buffer.as_bytes()))
 }
 
 fn decrypt(key: &str, data: &str) -> GlobalResult<String> {
-    let bytes = base64::decode(data).hand_log(|err| error!("{err}"))?;
+    let bytes = general_purpose::STANDARD
+        .decode(data)
+        .hand_log(|err| error!("{err}"))?;
     let cipher =
         AesCbc::new_from_slices(key.as_bytes(), &bytes[0..16]).hand_log(|err| error!("{err}"))?;
     let string = String::from_utf8(

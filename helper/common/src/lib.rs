@@ -20,12 +20,12 @@ pub use exception::thiserror;
 pub use serde;
 pub use serde_json;
 pub use serde_yaml;
+pub mod daemon;
 
 #[cfg(feature = "dbx")]
 pub mod dbx;
 pub use dbx::mysqlx;
 pub use sqlx;
 
-pub mod daemon;
 #[cfg(feature = "net")]
 pub mod net;

@@ -27,7 +27,7 @@ pub struct Cache {
 
 impl Cache {
     pub fn ssrc_sn_get() -> Option<u16> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         if let Some(val) = GENERAL_CACHE
             .shared
             .ssrc_sn
@@ -548,7 +548,7 @@ mod tests {
             sets.insert(i);
         }
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _i in 0..10 {
             if let Some(val) = sets.iter().choose(&mut rng).map(|v| *v) {
                 match sets.remove(&val) {

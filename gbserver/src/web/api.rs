@@ -2,14 +2,49 @@ use crate::general::model::*;
 use crate::service::handler;
 use common::exception::GlobalError;
 use common::log::{error, info};
-use poem_openapi::param::Header;
+use poem_openapi::param::{Header, Path, Query};
 use poem_openapi::payload::Json;
 use poem_openapi::OpenApi;
 
 pub struct RestApi;
 
-#[OpenApi(prefix_path = "/api")]
+#[OpenApi(prefix_path = "/api/v1")]
 impl RestApi {
+    #[allow(non_snake_case)]
+    #[oai(path = "/stream/start/:device_id/:channel_id", method = "get")]
+    /// 点播监控实时画面 transMode 默认0 udp 模式, 1 tcp 被动模式,2 tcp 主动模式
+    async fn stream_start(
+        &self,
+        #[oai(name = "gbs-token", validator(min_length = "20", max_length = "20"))] token: Header<
+            String,
+        >,
+        #[oai(name = "device_id", validator(min_length = "20", max_length = "20"))] device_id: Path<
+            String,
+        >,
+        #[oai(name = "channel_id", validator(min_length = "20", max_length = "20"))]
+        channel_id: Path<String>,
+        #[oai(
+            name = "trans_mode",
+            validator(maximum(value = "2"), minimum(value = "0"))
+        )]
+        trans_mode: Query<Option<u8>>,
+    ) -> Json<ResultMessageData<StreamInfo>> {
+        let header = token.0;
+        let trans_mode = trans_mode.0;
+        let live_model = PlayLiveModel::new(device_id.0, Some(channel_id.0), trans_mode);
+        info!("play_live:header = {:?},body = {:?}", &header, &live_model);
+        match handler::play_live(live_model, header).await {
+            Ok(data) => Json(ResultMessageData::build_success(data)),
+            Err(err) => {
+                error!("{}", err.to_string());
+                match err {
+                    GlobalError::BizErr(e) => Json(ResultMessageData::build_failure_msg(e.msg)),
+                    GlobalError::SysErr(_e) => Json(ResultMessageData::build_failure()),
+                }
+            }
+        }
+    }
+
     #[allow(non_snake_case)]
     #[oai(path = "/play/live/stream", method = "post")]
     /// 点播监控实时画面 transMode 默认0 udp 模式, 1 tcp 被动模式,2 tcp 主动模式

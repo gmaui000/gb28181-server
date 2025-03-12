@@ -1,6 +1,6 @@
 use crate::general;
 use common::anyhow::anyhow;
-use common::constructor::{Get, Set};
+use common::constructor::{Get, New, Set};
 use common::exception::GlobalError::SysErr;
 use common::exception::GlobalResult;
 use common::serde::{Deserialize, Serialize};
@@ -98,7 +98,7 @@ impl<T: Type + ParseFromJSON + ToJSON> ResultMessageData<T> {
     }
 }
 
-#[derive(Debug, Deserialize, Object, Serialize, Get)]
+#[derive(Debug, Deserialize, Object, Serialize, Default, Get, New)]
 #[serde(crate = "common::serde")]
 pub struct PlayLiveModel {
     #[oai(validator(min_length = "20", max_length = "20"))]

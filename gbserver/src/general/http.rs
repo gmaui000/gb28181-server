@@ -58,6 +58,7 @@ impl Http {
                 &self.prefix,
                 service.with(Cors::new().allow_methods([Method::GET, Method::POST])),
             )
+            // http://localhost:18080/docs
             .nest("/docs", ui);
         listener
             .set_nonblocking(true)

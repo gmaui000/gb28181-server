@@ -51,7 +51,8 @@ impl
         let http = self.http;
         let (http_listener, tu) = t;
         tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
+            .enable_io()
+            .enable_time()
             .build()
             .unwrap()
             .block_on(async {

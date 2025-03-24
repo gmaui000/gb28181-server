@@ -1,3 +1,5 @@
+use crate::general::model::AlarmInfo;
+use crate::general::AlarmConf;
 use crate::service::{ResMsg, EXPIRES};
 use common::anyhow::anyhow;
 use common::exception::GlobalError::SysErr;
@@ -158,6 +160,28 @@ pub async fn _ident_rtp_media_info(
         .hand_log(|msg| error!("{msg}"))?
         .post(format!("{uri}{RTP_MEDIA}"))
         .json(&rtp_map)
+        .send()
+        .await
+        .hand_log(|msg| error!("{msg}"))?;
+    if res.status().is_success() {
+        let body = res
+            .json::<ResMsg<bool>>()
+            .await
+            .hand_log(|msg| error!("{msg}"))?;
+        Ok(body.code == 200)
+    } else {
+        Err(SysErr(anyhow!("{}", res.status().to_string()))).hand_log(|msg| error!("{msg}"))?
+    }
+}
+
+pub async fn call_alarm_info(info: &AlarmInfo) -> GlobalResult<bool> {
+    let conf = AlarmConf::get_alarm_conf();
+    let res = reqwest::Client::builder()
+        .timeout(Duration::from_secs(EXPIRES))
+        .build()
+        .hand_log(|msg| error!("{msg}"))?
+        .post(conf.push_url.as_ref().unwrap())
+        .json(info)
         .send()
         .await
         .hand_log(|msg| error!("{msg}"))?;

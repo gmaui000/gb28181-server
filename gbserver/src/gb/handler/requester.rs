@@ -1,6 +1,8 @@
 use crate::gb::handler::builder::ResponseBuilder;
-use crate::gb::handler::{cmd::CmdQuery, parser};
+use crate::gb::handler::{cmd::CmdQuery, parser, parser::xml::KV2Model};
 use crate::gb::shared::rw::RWSession;
+use crate::general::model::AlarmInfo;
+use crate::service::callback;
 use crate::store::entity::{GbsDevice, GbsDeviceChannel, GbsDeviceExt, GbsOauth};
 use crate::store::mapper;
 use common::anyhow::anyhow;
@@ -257,7 +259,9 @@ impl Message {
                             MESSAGE_DEVICE_INFO => {
                                 Self::device_info(vs).await;
                             }
-                            MESSAGE_ALARM => {}
+                            MESSAGE_ALARM => {
+                                let _ = Self::message_notify_alarm(device_id, vs).await;
+                            }
                             MESSAGE_RECORD_INFO => {}
                             MESSAGE_MEDIA_STATUS => {}
                             MESSAGE_BROADCAST => {}
@@ -322,6 +326,13 @@ impl Message {
             //     let _ = CmdQuery::query_preset(&dc.device_id, Some(&dc.channel_id)).await.hand_log(|msg| error!("{msg}"));
             // }
         }
+    }
+
+    async fn message_notify_alarm(device_id: &str, vs: Vec<(String, String)>) -> GlobalResult<()> {
+        let mut info = AlarmInfo::kv_to_model(vs)?;
+        info.deviceId = device_id.to_string();
+        callback::call_alarm_info(&info).await?;
+        Ok(())
     }
 }
 

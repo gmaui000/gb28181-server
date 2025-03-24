@@ -15,9 +15,7 @@ impl RestApi {
     /// 点播监控实时画面 transMode 默认0 udp 模式, 1 tcp 被动模式,2 tcp 主动模式
     async fn stream_start(
         &self,
-        #[oai(name = "gbs-token", validator(min_length = "20", max_length = "20"))] token: Header<
-            String,
-        >,
+        #[oai(name = "gbs-token")] token: Header<String>,
         #[oai(name = "device_id", validator(min_length = "20", max_length = "20"))] device_id: Path<
             String,
         >,

@@ -1,8 +1,10 @@
+use crate::gb::handler::parser::xml::KV2Model;
 use crate::general;
 use common::anyhow::anyhow;
 use common::constructor::{Get, New, Set};
 use common::exception::GlobalError::SysErr;
-use common::exception::GlobalResult;
+use common::exception::{GlobalResult, TransError};
+use common::log::error;
 use common::serde::{Deserialize, Serialize};
 use poem_openapi::types::{ParseFromJSON, ToJSON, Type};
 use poem_openapi::{self, Object};
@@ -205,6 +207,46 @@ impl StreamInfo {
                 streamId: stream_id,
             },
         }
+    }
+}
+
+#[derive(Debug, Deserialize, Object, Serialize, Default)]
+#[serde(crate = "common::serde")]
+#[allow(non_snake_case)]
+pub struct AlarmInfo {
+    pub priority: u8,
+    pub method: u8,
+    pub alarmType: u8,
+    pub timeStr: String,
+    pub deviceId: String,
+    pub channelId: String,
+}
+
+impl KV2Model for AlarmInfo {
+    fn kv_to_model(arr: Vec<(String, String)>) -> GlobalResult<Self> {
+        use crate::gb::handler::parser::xml::*;
+        let mut model = AlarmInfo::default();
+        for (k, v) in arr {
+            match &k[..] {
+                NOTIFY_DEVICE_ID => {
+                    model.channelId = v;
+                }
+                NOTIFY_ALARM_PRIORITY => {
+                    model.priority = v.parse::<u8>().hand_log(|msg| error!("{msg}"))?;
+                }
+                NOTIFY_ALARM_TIME => {
+                    model.timeStr = v;
+                }
+                NOTIFY_ALARM_METHOD => {
+                    model.method = v.parse::<u8>().hand_log(|msg| error!("{msg}"))?;
+                }
+                NOTIFY_INFO_ALARM_TYPE => {
+                    model.alarmType = v.parse::<u8>().hand_log(|msg| error!("{msg}"))?;
+                }
+                &_ => {}
+            }
+        }
+        Ok(model)
     }
 }
 

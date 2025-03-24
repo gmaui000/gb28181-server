@@ -1,13 +1,59 @@
 use common::confgen::conf;
+use common::confgen::conf::{CheckFromConf, FieldCheckError};
 use common::constructor::Get;
 use common::once_cell::sync::OnceCell;
 use common::serde::Deserialize;
 use common::serde_default;
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
+use std::sync::OnceLock;
+use url::Url;
 pub mod cache;
 pub mod http;
 pub mod model;
+
+#[derive(Debug, Deserialize)]
+#[serde(crate = "common::serde")]
+#[conf(prefix = "server.alarm", check)]
+pub struct AlarmConf {
+    pub enable: bool,
+    pub push_url: Option<String>,
+    #[serde(default = "default_priority")]
+    pub priority: u8,
+}
+serde_default!(default_priority, u8, 4);
+static ALARM_CONF: OnceLock<AlarmConf> = OnceLock::new();
+
+impl AlarmConf {
+    pub fn get_alarm_conf() -> &'static Self {
+        ALARM_CONF.get_or_init(AlarmConf::conf)
+    }
+}
+
+impl CheckFromConf for AlarmConf {
+    fn _field_check(&self) -> Result<(), FieldCheckError> {
+        if self.enable {
+            if self.push_url.is_none() || self.push_url.as_ref().unwrap().is_empty() {
+                return Err(FieldCheckError::BizError(
+                    "server.alarm.push_url不能为空".to_string(),
+                ));
+            }
+
+            if Url::parse(self.push_url.as_ref().unwrap()).is_err() {
+                return Err(FieldCheckError::BizError(
+                    "server.alarm.push_url非有效的url地址".to_string(),
+                ));
+            }
+        }
+
+        if self.priority == 0 || self.priority > 4 {
+            return Err(FieldCheckError::BizError(
+                "server.alarm.priority必须为1|2|3|4".to_string(),
+            ));
+        }
+        Ok(())
+    }
+}
 
 #[derive(Debug, Get, Deserialize)]
 #[serde(crate = "common::serde")]

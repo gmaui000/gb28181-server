@@ -177,6 +177,10 @@ pub mod xml {
     pub const NOTIFY_DEVICE_ID: &str = "Notify,DeviceID";
     pub const NOTIFY_STATUS: &str = "Notify,Status";
     pub const NOTIFY_TYPE: &str = "Notify,NotifyType";
+    pub const NOTIFY_ALARM_PRIORITY: &str = "Notify,AlarmPriority";
+    pub const NOTIFY_ALARM_TIME: &str = "Notify,AlarmTime";
+    pub const NOTIFY_ALARM_METHOD: &str = "Notify,AlarmMethod";
+    pub const NOTIFY_INFO_ALARM_TYPE: &str = "Notify,Info,AlarmType";
 
     pub fn parse_xlm_to_vec(xml: &[u8]) -> GlobalResult<Vec<(String, String)>> {
         let mut xml_reader = Reader::from_reader(xml);
@@ -198,12 +202,12 @@ pub mod xml {
                     //此处使用GB18030进行解析,兼容新版本要求
                     let val =
                         encoding::decode(e.deref(), GB18030).hand_log(|msg| error!("{msg}"))?;
-                    let len = tag.split(",").collect::<Vec<&str>>().len() - 1;
+                    let len = tag.split(',').count().saturating_sub(1);
                     if k != len || j {
                         k = len;
                         vec.push(("?<-0_0->?".to_string(), k.to_string()));
                     }
-                    let key = tag[..tag.len() - 1].to_string();
+                    let key = tag.strip_suffix(',').unwrap_or(&tag).to_string();
                     vec.push((key, val.to_string()));
                     b = false;
                 }
@@ -224,5 +228,11 @@ pub mod xml {
         }
         debug!("{:?}", &vec);
         Ok(vec)
+    }
+
+    pub trait KV2Model {
+        fn kv_to_model(arr: Vec<(String, String)>) -> GlobalResult<Self>
+        where
+            Self: Sized;
     }
 }

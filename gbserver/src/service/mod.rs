@@ -4,7 +4,7 @@ use poem_openapi::{
     types::{ParseFromJSON, ToJSON, Type},
     Enum, Object,
 };
-mod callback;
+pub mod callback;
 pub mod control;
 pub mod handler;
 pub const EXPIRES: u64 = 8;

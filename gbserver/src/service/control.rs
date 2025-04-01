@@ -5,43 +5,80 @@
 3.持久化2/3地址索引到数据库建立设备时间关系
 */
 
-use crate::store::snap::ImageInfo;
-use poem::web::Field;
-
-// pub struct UploadInfo {
-//     load: Vec<u8>,
-//     uk: String,
-//     file_id: String,
-//     content_type: String,
-// }
+use crate::store::entity::GbsFileInfo;
+use crate::store::snap::Snap;
+use crate::utils::se_token;
+use common::chrono::Local;
+use common::exception::{GlobalError, GlobalResult, TransError};
+use common::log::error;
+use common::tokio::io::AsyncReadExt;
+use poem::Body;
+use poem_openapi::payload::Binary;
+use std::fs;
+use std::path::Path;
 
 //Field { name: "upload", file_name: "天府新区.jpg", content_type: "image/jpeg" }
+
 pub async fn upload(
-    field: Field,
-    _uk: String,
-    _session_id: Option<String>,
+    data: Binary<Body>,
+    session_id: String,
     file_id: Option<String>,
     snap_shot_file_id: Option<String>,
-) {
-    //todo 验证uk
-    //todo 持久化到db建立图片设备时间关系
-    let file_name = if let Some(f_id) = file_id {
-        f_id
-    } else if let Some(ssf_if) = snap_shot_file_id {
-        ssf_if
-    } else if let Some(ff_name) = field.file_name() {
-        ff_name.to_string()
-    } else {
-        "session_id".to_string()
+) -> GlobalResult<()> {
+    let id = snap_shot_file_id.or(file_id);
+    let (device_id, channel_id) = se_token::split_dc(&session_id)?;
+    let file_name = match id {
+        None => se_token::build_file_name(&device_id, &channel_id)?,
+        Some(id) => id,
     };
-    let file_type = field.content_type().unwrap().to_string();
-    let data = field.bytes().await.unwrap();
-    let image_info = ImageInfo::new(file_type, file_name, data);
-    let tx = ImageInfo::sender();
-    tx.send(image_info).unwrap();
-}
 
-// pub async fn snapshot_image(){
-//     let _conf = Snap::get_snap_by_conf();
-//     unimplemented!()
-// }
+    let mut info = GbsFileInfo::default();
+    let now = Local::now().naive_local();
+    info.biz_time = Some(now);
+    info.create_time = Some(now);
+    info.file_type = Some(0);
+    info.is_del = Some(0);
+
+    let (device_id, channel_id) = se_token::split_dc(&session_id)?;
+    info.device_id = device_id;
+    info.channel_id = channel_id;
+    info.biz_id = session_id;
+    let snap_conf = Snap::get_snap_by_conf();
+    let storage_path_str = &snap_conf.get_storage_path();
+    let relative_path = Path::new(storage_path_str);
+    let date_str = Local::now().format("%Y%m%d").to_string();
+    let final_dir = relative_path.join(date_str);
+    fs::create_dir_all(&final_dir).hand_log(|msg| error!("create pics dir failed: {msg}"))?;
+    let dir_path = final_dir.to_str().ok_or_else(|| {
+        GlobalError::new_sys_error("文件存储路径错误", |msg| error!("{msg}"))
+    })?;
+    info.dir_path = dir_path.to_string();
+
+    let file_name = Path::new(&file_name)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string();
+    let save_path = final_dir.join(format!(
+        "{}.{}",
+        file_name,
+        snap_conf.get_storage_format().to_ascii_lowercase()
+    ));
+    info.file_name = file_name;
+    info.file_format = Some(snap_conf.get_storage_format().to_ascii_lowercase());
+
+    let mut reader = data.0.into_async_read();
+    let mut bytes = Vec::new();
+    reader
+        .read_to_end(&mut bytes)
+        .await
+        .hand_log(|msg| error!("read pics bytes failed: {msg}"))?;
+    let img = image::load_from_memory(&bytes).hand_log(|msg| error!("{msg}"))?;
+    img.save(&save_path).hand_log(|msg| error!("{msg}"))?;
+    let size = fs::metadata(save_path)
+        .hand_log(|msg| error!("{msg}"))?
+        .len();
+    info.file_size = Some(size);
+    GbsFileInfo::insert_gbs_file_info(vec![info]).await?;
+    Ok(())
+}

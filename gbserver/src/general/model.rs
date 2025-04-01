@@ -172,6 +172,12 @@ pub struct PtzControlModel {
     zoom_speed: u8,
 }
 
+// rtsp://localhost:8554/rtp/07C04232
+// rtmp://localhost:1935/rtp/07C04232
+// http://localhost:7099/rtp/07C04232.live.flv
+// http://localhost:7099/rtp/07C04232.live.mp4
+// http://localhost:7099/rtp/07C04232.live.ts
+
 #[derive(Debug, Deserialize, Object, Serialize)]
 #[serde(crate = "common::serde")]
 #[allow(non_snake_case)]
@@ -189,12 +195,12 @@ impl StreamInfo {
                 let node_stream = stream_conf.get_node_map().get(&node_name).unwrap();
                 Self {
                     flv: format!(
-                        "http://{}:{}/{node_name}/play/{stream_id}.flv",
+                        "http://{}:{}/rtp/{stream_id}.flv",
                         node_stream.get_pub_ip(),
                         node_stream.get_local_port()
                     ),
                     m3u8: format!(
-                        "http://{}:{}/{node_name}/play/{stream_id}.m3u8",
+                        "http://{}:{}/rtp/{stream_id}.m3u8",
                         node_stream.get_pub_ip(),
                         node_stream.get_local_port()
                     ),
@@ -202,8 +208,8 @@ impl StreamInfo {
                 }
             }
             Some(addr) => Self {
-                flv: format!("{addr}/{node_name}/play/{stream_id}.flv"),
-                m3u8: format!("{addr}/{node_name}/play/{stream_id}.m3u8"),
+                flv: format!("{addr}/rtp/{stream_id}.flv"),
+                m3u8: format!("{addr}/rtp/{stream_id}.m3u8"),
                 streamId: stream_id,
             },
         }

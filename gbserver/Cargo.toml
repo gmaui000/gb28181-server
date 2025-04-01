@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 rsip = "0.4"
-sqlx = { version = "0.8", default-features = false, features = ["tls-rustls"] }
+sqlx = { version = "0.8",default-features = false}
 uuid = { version = "1.15", features = ["v4"] }
 quick-xml = { version = "0.37", features = ["encoding_rs", "encoding"] }
 encoding_rs = "0.8"
@@ -24,6 +24,7 @@ rayon = "1.10"
 crossbeam-channel = "0.5"
 parking_lot = "0.12"
 url = "2.5"
+cron = "0.15"
 anyhow = "1.0"
 common = { package = "common", path = "../helper/common", features = [
     "net",

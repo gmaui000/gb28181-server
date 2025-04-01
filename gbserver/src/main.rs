@@ -1,4 +1,4 @@
-// #![allow(warnings)]
+#![allow(warnings)]
 use crate::app::AppInfo;
 use common::daemon::Daemon;
 mod app;

@@ -2,7 +2,6 @@ use crate::gb::handler::builder::{RequestBuilder, ResponseBuilder};
 use crate::gb::handler::events::event::{Container, EventSession, Ident};
 use crate::gb::shared::rw::RequestOutput;
 use crate::general::model::{MediaAddress, PtzControlModel, StreamMode, TimeRange};
-use crate::store::entity::GbsDevice;
 use common::exception::{GlobalError, GlobalResult, TransError};
 use common::log::{debug, error, warn};
 use common::tokio::sync::mpsc;
@@ -75,24 +74,38 @@ impl CmdControl {
     }
 
     //device_id: &String, channel_id: &String, num: u8, interval: u8, uri: &String, session_id: u32
-    pub async fn snapshot_image(device_id: &String, _channel_id: &str) -> GlobalResult<()> {
-        let device = GbsDevice::query_gbs_device_by_device_id(device_id)
-            .await?
-            .ok_or_else(|| {
-                GlobalError::new_sys_error(&format!("未知设备: {device_id}"), |msg| {
-                    error!("{msg}")
-                })
-            })?;
-        match device.get_gb_version().as_deref() {
-            Some("3.0") => {
-                //RequestBuilder::control_snapshot_image()
-                Ok(())
-            }
-            _ => Err(GlobalError::new_sys_error(
-                &format!("未知设备: {device_id}"),
-                |msg| error!("{msg}"),
-            )),
-        }
+    // pub async fn snapshot_image(device_id: &String, _channel_id: &str) -> GlobalResult<()> {
+    //     let device = GbsDevice::query_gbs_device_by_device_id(device_id)
+    //         .await?
+    //         .ok_or_else(|| {
+    //             GlobalError::new_sys_error(&format!("未知设备: {device_id}"), |msg| {
+    //                 error!("{msg}")
+    //             })
+    //         })?;
+    //     match device.get_gb_version().as_deref() {
+    //         Some("3.0") => {
+    //             //RequestBuilder::control_snapshot_image()
+    //             Ok(())
+    //         }
+    //         _ => Err(GlobalError::new_sys_error(
+    //             &format!("未知设备: {device_id}"),
+    //             |msg| error!("{msg}"),
+    //         )),
+    //     }
+    // }
+    pub async fn snapshot_image(
+        device_id: &String,
+        channel_id: &String,
+        num: u8,
+        interval: u8,
+        uri: &String,
+        session_id: &String,
+    ) -> GlobalResult<()> {
+        let (ident, msg) = RequestBuilder::control_snapshot_image(
+            device_id, channel_id, num, interval, uri, session_id,
+        )
+        .await?;
+        RequestOutput::new(ident, msg, None).do_send()
     }
 }
 

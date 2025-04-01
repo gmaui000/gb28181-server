@@ -222,11 +222,11 @@ impl RequestBuilder {
         num: u8,
         interval: u8,
         uri: &String,
-        session_id: u32,
+        session_id: &String,
     ) -> GlobalResult<(Ident, SipMessage)> {
         let xml = XmlBuilder::control_snapshot_image(channel_id, num, interval, uri, session_id);
 
-        Self::build_message_request(None, device_id, xml).await
+        Self::build_message_request(Some(channel_id), device_id, xml).await
     }
     pub async fn control_ptz(
         ptz_control_model: &PtzControlModel,
@@ -253,7 +253,7 @@ impl RequestBuilder {
         let cs_eq_str = format!("{} MESSAGE", rng.random_range(12u8..255u8));
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
         headers.push(cs_eq);
-        headers.push(rsip::headers::ContentType::new("APPLICATION/MANSCDP+xml").into());
+        headers.push(rsip::headers::ContentType::new("Application/MANSCDP+xml").into());
         headers.push(rsip::headers::ContentLength::from(body.len() as u32).into());
         let request_msg: SipMessage = Request {
             method: Method::Message,
@@ -286,7 +286,7 @@ impl RequestBuilder {
             ))
             .into(),
         );
-        headers.push(rsip::headers::ContentType::new("APPLICATION/MANSCDP+xml").into());
+        headers.push(rsip::headers::ContentType::new("Application/MANSCDP+xml").into());
         headers.push(rsip::headers::ContentLength::from(body.len() as u32).into());
         let request_msg: SipMessage = Request {
             method: Method::Subscribe,
@@ -328,7 +328,7 @@ impl RequestBuilder {
         let cs_eq = rsip::headers::CSeq::new(&cs_eq_str).into();
         headers.push(cs_eq);
 
-        headers.push(rsip::headers::ContentType::new("APPLICATION/MANSRTSP").into());
+        headers.push(rsip::headers::ContentType::new("Application/MANSRTSP").into());
         headers.push(rsip::headers::ContentLength::from(body.len() as u32).into());
         let msg = Request {
             method: Method::Info,
@@ -629,7 +629,7 @@ impl RequestBuilder {
             ))
             .into(),
         );
-        headers.push(rsip::headers::ContentType::new("APPLICATION/SDP").into());
+        headers.push(rsip::headers::ContentType::new("Application/SDP").into());
         headers.push(rsip::headers::ContentLength::from(body.len() as u32).into());
         let msg = Request {
             method: Method::Invite,
@@ -762,19 +762,22 @@ impl XmlBuilder {
         num: u8,
         interval: u8,
         uri: &String,
-        session_id: u32,
+        session_id: &String,
     ) -> String {
         let mut xml = String::new();
-        xml.push_str("<?xml version=\"1.0\" encoding=\"GB18030\"?>\r\n");
+        xml.push_str("<?xml version=\"1.0\"?>\r\n");
         xml.push_str("<Control>\r\n");
         xml.push_str("<CmdType>DeviceConfig</CmdType>\r\n");
-        xml.push_str(&format!("<SN>{}</SN>\r\n", Local::now().timestamp()));
+        xml.push_str(&format!(
+            "<SN>{}</SN>\r\n",
+            Local::now().timestamp_subsec_millis()
+        ));
         xml.push_str(&format!("<DeviceID>{}</DeviceID>\r\n", channel_id));
         xml.push_str("<SnapShotConfig>\r\n");
         xml.push_str(&format!("<SnapNum>{}</SnapNum>\r\n", num));
         xml.push_str(&format!("<Interval>{}</Interval>\r\n", interval));
-        xml.push_str(&format!("<UploadURI>{}</UploadURI>\r\n", uri));
-        xml.push_str(&format!("<SessionId>{}</SessionId>\r\n", session_id));
+        xml.push_str(&format!("<UploadURL>{}</UploadURL>\r\n", uri));
+        xml.push_str(&format!("<SessionID>{}</SessionID>\r\n", session_id));
         xml.push_str("</SnapShotConfig>\r\n");
         xml.push_str("</Control>\r\n");
         xml
@@ -1022,5 +1025,18 @@ mod tests {
             let out_cmd = super::XmlBuilder::build_cmd_ptz_line(&model);
             assert_eq!(out_cmd, "A50F01200000A075");
         }
+    }
+
+    #[test]
+    fn test_left_mv() {
+        let sec = Local::now().timestamp();
+        println!("+0 {}", sec);
+        println!("+1 {}", sec + 1);
+        println!("+2 {}", sec + 2);
+        println!("+3 {}", sec + 3);
+        println!("L0 {}", sec >> 1);
+        println!("L1 {}", (sec + 1) >> 1);
+        println!("L2 {}", (sec + 2) >> 1);
+        println!("L3 {}", (sec + 3) >> 1);
     }
 }

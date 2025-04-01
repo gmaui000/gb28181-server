@@ -28,6 +28,32 @@ pub async fn get_device_status_info(
     Ok(res)
 }
 
+pub async fn get_snapshot_dc_by_limit(
+    start: u32,
+    count: u32,
+) -> GlobalResult<Vec<(String, String)>> {
+    let pool = get_conn_by_pool()?;
+    let script = r"
+    SELECT c.DEVICE_ID,c.CHANNEL_ID FROM GBS_OAUTH a
+    INNER JOIN GBS_DEVICE b ON a.DEVICE_ID = b.DEVICE_ID
+    INNER JOIN GBS_DEVICE_CHANNEL c ON a.DEVICE_ID=c.DEVICE_ID
+    WHERE
+    a.DEL = 0
+    AND b.`status` = 1
+    AND DATE_ADD(b.register_time,INTERVAL b.register_expires SECOND)>NOW()
+    AND LEFT(b.GB_VERSION, 1) >= '3'
+    AND c.PARENT_ID=c.DEVICE_ID
+    AND !(c.`status` = 'OFF' OR c.`status` = 'OFFLINE' )
+    ORDER BY c.DEVICE_ID,c.CHANNEL_ID limit ?,?";
+    let dcs: Vec<(String, String)> = sqlx::query_as(script)
+        .bind(start)
+        .bind(count)
+        .fetch_all(pool)
+        .await
+        .hand_log(|msg| error!("{msg}"))?;
+    Ok(dcs)
+}
+
 #[cfg(test)]
 #[allow(dead_code, unused_imports)]
 mod test {
@@ -35,6 +61,13 @@ mod test {
     use common::confgen::conf::init_confgen;
     use common::dbx::mysqlx;
     use common::tokio;
+
+    #[tokio::test]
+    async fn test_get_snapshot_dc_by_limit() {
+        init();
+        let result = get_snapshot_dc_by_limit(0, 5).await;
+        println!("{:?}", result);
+    }
 
     // #[tokio::test]
     async fn test_get_device_channel_status() {
@@ -55,7 +88,7 @@ mod test {
     }
 
     fn init() {
-        init_confgen("config.yml".to_string());
+        init_confgen("../config.yml".to_string());
         let _ = mysqlx::init_conn_pool();
     }
 }

@@ -1,5 +1,6 @@
 use crate::gb::SessionConf;
 use crate::general::http::Http;
+use crate::general::runner::{Runner, SnapRunner};
 use common::daemon::Daemon;
 use common::dbx::mysqlx;
 use common::exception::{GlobalError, GlobalResult, TransError};
@@ -69,6 +70,7 @@ impl
                     error!("Session server stop");
                     Ok::<(), GlobalError>(())
                 });
+                SnapRunner::next().await;
                 se.await.hand_log(|msg| error!("Session:{msg}"))??;
                 web.await.hand_log(|msg| error!("WEB:{msg}"))??;
                 Ok::<(), GlobalError>(())

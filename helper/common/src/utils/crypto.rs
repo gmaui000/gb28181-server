@@ -5,11 +5,19 @@ use block_modes::{BlockMode, Cbc};
 use exception::{GlobalResult, TransError};
 use log::error;
 use rand::seq::IteratorRandom;
+use sha2::{Digest, Sha256};
 
 type AesCbc = Cbc<Aes256, Pkcs7>;
 
 const BASE_STR: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const DEFAULT_KEY: &str = "1234567890All in Rust 1234567890"; //32长度
+
+pub fn generate_token(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    let result = hasher.finalize();
+    hex::encode(&result[..16]) // 32 字节（64 个十六进制字符）
+}
 
 fn gen_ascii_chars(size: usize) -> GlobalResult<String> {
     let mut rng = rand::rng(); // 不再需要 `&mut`
@@ -59,7 +67,9 @@ pub fn default_decrypt(data: &str) -> GlobalResult<String> {
 
 #[cfg(test)]
 mod test {
-    use crate::utils::crypto::{decrypt, default_decrypt, default_encrypt, encrypt};
+    use crate::utils::crypto::{
+        decrypt, default_decrypt, default_encrypt, encrypt, generate_token,
+    };
 
     #[test]
     fn t1() {
@@ -81,5 +91,12 @@ mod test {
             "{}",
             default_decrypt("Zncyb25BdWFZQkhxZ3JHST/4t3MN5NMWNZT3HVjNxRY=").unwrap()
         );
+    }
+
+    #[test]
+    fn t3() {
+        let text = "asdfa1231asdfassJKJKLJKL.";
+        let string = generate_token(text);
+        println!("{}", string);
     }
 }
